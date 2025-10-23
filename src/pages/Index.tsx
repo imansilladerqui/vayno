@@ -12,7 +12,9 @@ const Index = () => {
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8">
             <Zap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Revolutionary Parking Management</span>
+            <span className="text-sm font-medium text-primary">
+              Revolutionary Parking Management
+            </span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
@@ -20,7 +22,9 @@ const Index = () => {
           </h1>
 
           <p className="text-xl text-muted-foreground mb-10 max-w-2xl">
-            Take complete control of your parking business from anywhere. Monitor occupancy, track revenue, and manage operations without relying on anyone else.
+            Take complete control of your parking business from anywhere.
+            Monitor occupancy, track revenue, and manage operations without
+            relying on anyone else.
           </p>
 
           <div className="flex gap-4">
@@ -45,7 +49,8 @@ const Index = () => {
             </div>
             <h3 className="text-xl font-bold mb-2">Real-Time Monitoring</h3>
             <p className="text-muted-foreground">
-              Track every spot in real-time. Know exactly what's happening in your parking lot at any moment.
+              Track every spot in real-time. Know exactly what's happening in
+              your parking lot at any moment.
             </p>
           </div>
 
@@ -55,7 +60,8 @@ const Index = () => {
             </div>
             <h3 className="text-xl font-bold mb-2">Revenue Analytics</h3>
             <p className="text-muted-foreground">
-              Comprehensive insights into your daily, weekly, and monthly revenue with beautiful charts.
+              Comprehensive insights into your daily, weekly, and monthly
+              revenue with beautiful charts.
             </p>
           </div>
 
@@ -65,7 +71,8 @@ const Index = () => {
             </div>
             <h3 className="text-xl font-bold mb-2">Complete Control</h3>
             <p className="text-muted-foreground">
-              Manage your business independently without needing to trust or rely on employees.
+              Manage your business independently without needing to trust or
+              rely on employees.
             </p>
           </div>
         </div>
