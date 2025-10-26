@@ -126,19 +126,6 @@ Connect a custom domain by navigating to Project > Settings > Domains and clicki
 4. **Revenue Tracking**: Monitor daily income and occupancy trends
 5. **Spot Control**: Mark spots as occupied or available manually
 
-## 🤝 Contributing
-
-This project supports multiple development workflows:
-
-- **Lovable IDE**: Edit directly in the browser at the [project URL](https://lovable.dev/projects/60dbe269-653e-4a45-92f5-aa61aeece90f)
-- **Local Development**: Clone and develop with your preferred IDE
-- **GitHub Codespaces**: Use cloud-based development environment
-- **GitHub Web Editor**: Edit files directly in the GitHub interface
-
 ## 📄 License
 
 This project is private and proprietary.
-
----
-
-**Built with ❤️ using Lovable**
