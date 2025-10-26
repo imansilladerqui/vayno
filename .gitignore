@@ -45,6 +45,8 @@ supabase/config.toml
 # Database dumps (if you create them)
 *.sql.dump
 *.backup
+supabase/database-schema.sql
+supabase/seed-data.sql
 
 # TypeScript
 *.tsbuildinfo
