@@ -17,7 +17,6 @@ export type ParkingLot = Tables<"parking_lots">;
 export type ParkingSpot = Tables<"parking_spots">;
 export type ParkingSession = Tables<"parking_sessions">;
 export type ActivityLog = Tables<"activity_logs">;
-export type Notification = Tables<"notifications">;
 
 // Insert types
 export type ProfileInsert = TablesInsert<"profiles">;
@@ -25,7 +24,6 @@ export type ParkingLotInsert = TablesInsert<"parking_lots">;
 export type ParkingSpotInsert = TablesInsert<"parking_spots">;
 export type ParkingSessionInsert = TablesInsert<"parking_sessions">;
 export type ActivityLogInsert = TablesInsert<"activity_logs">;
-export type NotificationInsert = TablesInsert<"notifications">;
 
 // Update types
 export type ProfileUpdate = TablesUpdate<"profiles">;
@@ -33,7 +31,6 @@ export type ParkingLotUpdate = TablesUpdate<"parking_lots">;
 export type ParkingSpotUpdate = TablesUpdate<"parking_spots">;
 export type ParkingSessionUpdate = TablesUpdate<"parking_sessions">;
 export type ActivityLogUpdate = TablesUpdate<"activity_logs">;
-export type NotificationUpdate = TablesUpdate<"notifications">;
 
 // Enum types
 export type UserRole = Enums<"user_role">;
@@ -46,11 +43,26 @@ export type ActiveSession =
 export type ParkingLotStats =
   Database["public"]["Views"]["parking_lot_stats"]["Row"];
 
-// Custom types for business logic
-export interface ParkingSessionWithDetails extends ParkingSession {
-  parking_spots: ParkingSpot;
+export type ParkingSessionWithDetails = ParkingSession & {
+  parking_spots: ParkingSpot & {
+    parking_lots: ParkingLot;
+  };
+  profiles?: Profile | null;
+};
+
+export type ParkingSpotWithLot = ParkingSpot & {
   parking_lots: ParkingLot;
-  profiles?: Profile;
+};
+
+export type ActivityLogWithProfile = ActivityLog & {
+  profiles?: Profile | null;
+};
+
+export interface ProfileWithBusiness extends Profile {
+  businesses?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 // Form types

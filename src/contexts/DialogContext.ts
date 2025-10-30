@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import type { Profile } from "@/types";
+import type { Business } from "@/hooks/queries/useBusinessQueries";
 
 interface UseDialogReturn {
   open: boolean;
@@ -16,9 +17,19 @@ interface DeleteUserDialogType extends UseDialogReturn {
   setSelectedUser: (user: Profile | null) => void;
 }
 
+interface DeleteBusinessDialogType extends UseDialogReturn {
+  selectedBusiness: Business | null;
+  setSelectedBusiness: (business: Business | null) => void;
+}
+
 interface DialogContextType {
   deleteUserDialog: DeleteUserDialogType;
-  [key: string]: DeleteUserDialogType | UseDialogReturn | object;
+  deleteBusinessDialog: DeleteBusinessDialogType;
+  [key: string]:
+    | DeleteUserDialogType
+    | DeleteBusinessDialogType
+    | UseDialogReturn
+    | object;
 }
 
 export const DialogContext = createContext<DialogContextType | null>(null);

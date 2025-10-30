@@ -108,12 +108,6 @@ npm run preview      # Preview production build
 npm run lint         # Run ESLint
 ```
 
-## 🌐 Deployment
-
-### Lovable Platform
-
-Simply open [Lovable](https://lovable.dev/projects/60dbe269-653e-4a45-92f5-aa61aeece90f) and click on Share → Publish.
-
 ### Custom Domain
 
 Connect a custom domain by navigating to Project > Settings > Domains and clicking Connect Domain.

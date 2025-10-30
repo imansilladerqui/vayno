@@ -1,62 +1,142 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AuthService } from "@/lib/authService";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { UserRole } from "@/types";
-import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useCrudMutationConfig, EntityNames } from "@/lib/mutationHelpers";
 
-// Query keys - centralized for consistency
 export const userQueryKeys = {
   all: ["users"] as const,
-  lists: () => [...userQueryKeys.all, "list"] as const,
-  list: () => [...userQueryKeys.lists()] as const,
+  list: () => [...userQueryKeys.all, "list"] as const,
   detail: (id: string) => [...userQueryKeys.all, "detail", id] as const,
+  byBusiness: (businessId?: string) =>
+    [...userQueryKeys.all, "by-business", businessId] as const,
 };
 
-// Query to fetch all users
 export const useAllUsers = () => {
   return useQuery({
     queryKey: userQueryKeys.list(),
-    queryFn: () => AuthService.getAllUsers(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(
+          `
+          *,
+          businesses:business_id (
+            id,
+            name
+          )
+        `
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
   });
 };
 
-// Query to fetch a single user
-export const useUserProfile = (userId?: string) => {
+export const useUsersByBusiness = (businessId?: string) => {
   return useQuery({
-    queryKey: userQueryKeys.detail(userId!),
-    queryFn: () => AuthService.getUserProfile(userId!),
-    enabled: !!userId,
+    queryKey: userQueryKeys.byBusiness(businessId),
+    queryFn: async () => {
+      if (!businessId) return [];
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("business_id", businessId);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!businessId,
   });
 };
 
-// Mutation to create user
 export const useCreateUser = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       email: string;
       full_name: string;
       role: UserRole;
       phone?: string;
       password?: string;
       sendPasswordEmail?: boolean;
-    }) => AuthService.createUser(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: userQueryKeys.all });
-      toast.success("User created successfully");
+    }) => {
+      if (!data.password && !data.sendPasswordEmail) {
+        throw new Error(
+          "Either password or sendPasswordEmail must be provided"
+        );
+      }
+
+      // Generate secure password if needed
+      const generateSecurePassword = (): string => {
+        const charset =
+          "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+        let password = "";
+        for (let i = 0; i < 16; i++) {
+          password += charset.charAt(
+            Math.floor(Math.random() * charset.length)
+          );
+        }
+        return password;
+      };
+
+      const tempPassword = data.password || generateSecurePassword();
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: tempPassword,
+        options: {
+          data: {
+            full_name: data.full_name,
+            role: data.role,
+          },
+          emailRedirectTo: undefined,
+        },
+      });
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            id: authData.user.id,
+            email: data.email,
+            full_name: data.full_name,
+            role: data.role,
+            phone: data.phone,
+          })
+          .select()
+          .single();
+
+        if (profileError) throw profileError;
+
+        if (data.sendPasswordEmail && data.email) {
+          // TODO: Implement email sending
+          console.log("Password email would be sent to:", data.email);
+          console.log("Temporary password:", tempPassword);
+        }
+
+        return {
+          ...profile,
+          tempPassword: data.sendPasswordEmail ? undefined : tempPassword,
+        };
+      }
+
+      throw new Error("Failed to create user");
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to create user");
-    },
+    ...useCrudMutationConfig({
+      invalidateKeys: userQueryKeys.all,
+      entityName: EntityNames.User,
+      action: "create",
+    }),
   });
 };
 
-// Mutation to update user
 export const useUpdateUser = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       userId,
       data,
     }: {
@@ -66,30 +146,41 @@ export const useUpdateUser = () => {
         email?: string;
         role?: UserRole;
         phone?: string;
+        business_id?: string | null;
+        is_active?: boolean;
       };
-    }) => AuthService.updateUser(userId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: userQueryKeys.all });
-      toast.success("User updated successfully");
+    }) => {
+      const { data: updated, error } = await supabase
+        .from("profiles")
+        .update(data)
+        .eq("id", userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return updated;
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to update user");
-    },
+    ...useCrudMutationConfig({
+      invalidateKeys: userQueryKeys.all,
+      entityName: EntityNames.User,
+      action: "update",
+    }),
   });
 };
 
-// Mutation to delete user
 export const useDeleteUser = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (userId: string) => AuthService.deleteUser(userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: userQueryKeys.all });
-      toast.success("User deleted successfully");
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", userId);
+      if (error) throw error;
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to delete user");
-    },
+    ...useCrudMutationConfig({
+      invalidateKeys: userQueryKeys.all,
+      entityName: EntityNames.User,
+      action: "delete",
+    }),
   });
 };

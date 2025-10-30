@@ -130,6 +130,71 @@ export type Database = {
           }
         ];
       };
+      businesses: {
+        Row: {
+          address: string | null;
+          business_type: string | null;
+          city: string | null;
+          contact_email: string | null;
+          contact_phone: string | null;
+          country: string | null;
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          is_active: boolean | null;
+          name: string;
+          owner_id: string | null;
+          state: string | null;
+          tax_id: string | null;
+          updated_at: string | null;
+          zip_code: string | null;
+        };
+        Insert: {
+          address?: string | null;
+          business_type?: string | null;
+          city?: string | null;
+          contact_email?: string | null;
+          contact_phone?: string | null;
+          country?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          name: string;
+          owner_id?: string | null;
+          state?: string | null;
+          tax_id?: string | null;
+          updated_at?: string | null;
+          zip_code?: string | null;
+        };
+        Update: {
+          address?: string | null;
+          business_type?: string | null;
+          city?: string | null;
+          contact_email?: string | null;
+          contact_phone?: string | null;
+          country?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean | null;
+          name?: string;
+          owner_id?: string | null;
+          state?: string | null;
+          tax_id?: string | null;
+          updated_at?: string | null;
+          zip_code?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "businesses_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       parking_lots: {
         Row: {
           address: string;
@@ -397,6 +462,7 @@ export type Database = {
         Row: {
           address: string | null;
           avatar_url: string | null;
+          business_id: string | null;
           created_at: string | null;
           date_of_birth: string | null;
           email: string;
@@ -410,6 +476,7 @@ export type Database = {
         Insert: {
           address?: string | null;
           avatar_url?: string | null;
+          business_id?: string | null;
           created_at?: string | null;
           date_of_birth?: string | null;
           email: string;
@@ -423,6 +490,7 @@ export type Database = {
         Update: {
           address?: string | null;
           avatar_url?: string | null;
+          business_id?: string | null;
           created_at?: string | null;
           date_of_birth?: string | null;
           email?: string;
@@ -433,7 +501,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"] | null;
           updated_at?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "profiles_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       reservations: {
         Row: {
@@ -558,7 +634,7 @@ export type Database = {
     Enums: {
       parking_status: "available" | "occupied" | "reserved" | "maintenance";
       payment_status: "pending" | "completed" | "failed" | "refunded";
-      user_role: "customer" | "admin" | "superadmin";
+      user_role: "user" | "admin" | "superadmin";
       vehicle_type: "car" | "motorcycle" | "truck" | "van" | "other";
     };
     CompositeTypes: {
@@ -695,7 +771,7 @@ export const Constants = {
     Enums: {
       parking_status: ["available", "occupied", "reserved", "maintenance"],
       payment_status: ["pending", "completed", "failed", "refunded"],
-      user_role: ["customer", "admin", "superadmin"],
+      user_role: ["user", "admin", "superadmin"],
       vehicle_type: ["car", "motorcycle", "truck", "van", "other"],
     },
   },

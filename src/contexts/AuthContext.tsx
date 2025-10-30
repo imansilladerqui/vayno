@@ -2,12 +2,15 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { USER_ROLES } from "@/lib/constants";
+import { USER_ROLES } from "@/lib/utils";
+import { useCurrentProfile } from "@/hooks/queries/useProfileQueries";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   isSuperAdmin: boolean;
+  isAdmin: boolean;
+  isUser: boolean;
   isLoading: boolean;
 }
 
@@ -28,8 +31,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const { data: profile, isLoading: isProfileLoading } = useCurrentProfile(
+    user?.id
+  );
+
   useEffect(() => {
-    // Get initial session immediately
     const initializeSession = async () => {
       const {
         data: { session },
@@ -41,10 +47,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     initializeSession();
 
-    // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
       setSession(session);
       setIsLoading(false);
@@ -53,9 +58,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => subscription.unsubscribe();
   }, []);
 
-  const isSuperAdmin = user?.user_metadata?.role === USER_ROLES.SUPERADMIN;
+  const userRole = profile?.role || USER_ROLES.USER;
+  const isSuperAdmin = userRole === USER_ROLES.SUPERADMIN;
+  const isAdmin = userRole === USER_ROLES.ADMIN;
+  const isUser = userRole === USER_ROLES.USER;
 
-  const value = { user, session, isSuperAdmin, isLoading };
+  const isLoadingAuth = isLoading || isProfileLoading;
+
+  const value = {
+    user,
+    session,
+    isSuperAdmin,
+    isAdmin,
+    isUser,
+    isLoading: isLoadingAuth,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

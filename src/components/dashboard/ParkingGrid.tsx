@@ -1,50 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useParkingManagement } from "@/hooks/useParkingManagement";
-import { Loader2, AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export const ParkingGrid = () => {
-  const { parkingSpots: spots, isLoading, error } = useParkingManagement();
+interface ParkingGridProps {
+  parkingSpots?: Array<{
+    id: string;
+    spot_number: string;
+    status: string;
+    parking_lots?: {
+      name: string;
+    };
+    is_handicap_accessible?: boolean;
+    is_electric_charging?: boolean;
+  }>;
+}
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Parking Spots Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-32">
-            <div className="text-center">
-              <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">
-                Loading parking spots...
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Parking Spots Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to load parking spots. Please check your connection.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
-
+export const ParkingGrid = ({ parkingSpots: spots }: ParkingGridProps) => {
   if (!spots || spots.length === 0) {
     return (
       <Card>
@@ -82,7 +52,6 @@ export const ParkingGrid = () => {
     return acc;
   }, {} as Record<string, typeof spots>);
 
-  // Calculate status counts
   const statusCounts = spots.reduce((acc, spot) => {
     acc[spot.status] = (acc[spot.status] || 0) + 1;
     return acc;
