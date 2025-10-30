@@ -4,55 +4,42 @@ import { useAllUsers, useUpdateUser } from "@/hooks/queries/useUserQueries";
 import { useDialogs } from "@/contexts/DialogContext";
 import type { Profile, UserRole } from "@/types";
 
-// User Form Schema
 export const userSchema = z.object({
-  full_name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
+  full_name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address").min(1, "Email is required"),
   phone: z.string().optional(),
-  role: z.enum(["customer", "admin", "superadmin"] as [
-    UserRole,
-    ...UserRole[]
-  ]),
+  role: z.enum(["user", "admin", "superadmin"] as [UserRole, ...UserRole[]]),
+  business_id: z.string().uuid().nullable().optional(),
+  is_active: z.boolean().default(true),
 });
 
 export type UserFormData = z.infer<typeof userSchema>;
 
-/**
- * Hook for managing users throughout the application
- * Provides a unified API for user operations
- */
+type UserUpdateData = {
+  full_name?: string;
+  email?: string;
+  role?: UserRole;
+  phone?: string;
+  business_id?: string | null;
+  is_active?: boolean;
+};
+
 export const useUserManagement = () => {
   const navigate = useNavigate();
   const { deleteUserDialog } = useDialogs();
-
-  // Data queries
   const allUsersQuery = useAllUsers();
   const updateUserMutation = useUpdateUser();
 
-  // Note: For getting a single user profile, components should use useUserProfile directly
-  // or pass the ID as a parameter to this hook
-
-  // Navigate to edit user
   const editUser = (user: Profile) => {
     navigate(`/users/${user.id}/edit`);
   };
 
-  // Open delete confirmation dialog
   const deleteUser = (user: Profile) => {
     deleteUserDialog.setSelectedUser(user);
     deleteUserDialog.show();
   };
 
-  // Update user (for edit form)
-  const updateUser = (
-    userId: string,
-    data: {
-      full_name?: string;
-      email?: string;
-      role?: UserRole;
-      phone?: string;
-    }
-  ) => {
+  const updateUser = (userId: string, data: UserUpdateData) => {
     updateUserMutation.mutate(
       { userId, data },
       {
@@ -64,17 +51,12 @@ export const useUserManagement = () => {
   };
 
   return {
-    // Data
     users: allUsersQuery.data,
     isLoading: allUsersQuery.isLoading,
     error: allUsersQuery.error,
-
-    // Actions
     editUser,
     deleteUser,
     updateUser,
-
-    // Status
     isUpdating: updateUserMutation.isPending,
   };
 };

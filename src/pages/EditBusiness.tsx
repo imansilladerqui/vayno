@@ -7,47 +7,60 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect } from "react";
 import {
-  userSchema,
-  type UserFormData,
-  useUserManagement,
-} from "@/hooks/useUserManagement";
-import { UserForm } from "@/components/user/UserForm";
-import { useCurrentProfile } from "@/hooks/queries/useProfileQueries";
+  businessSchema,
+  type BusinessFormData,
+  useBusinessManagement,
+} from "@/hooks/useBusinessManagement";
+import { BusinessForm } from "@/components/business/BusinessForm";
+import { useBusiness } from "@/hooks/queries/useBusinessQueries";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
-const EditUser = () => {
+const EditBusiness = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { updateUser, isUpdating } = useUserManagement();
-  const { data: user, isLoading, error } = useCurrentProfile(id);
+  const { updateBusiness, isUpdating } = useBusinessManagement();
+  const { data: business, isLoading, error } = useBusiness(id!);
 
-  const form = useForm<UserFormData>({
-    resolver: zodResolver(userSchema),
+  const form = useForm<BusinessFormData>({
+    resolver: zodResolver(businessSchema),
     defaultValues: {
-      full_name: "",
-      email: "",
-      phone: "",
-      role: "user" as UserFormData["role"],
-      business_id: null,
+      name: "",
+      description: "",
+      address: "",
+      city: "",
+      state: "",
+      zip_code: "",
+      country: "US",
+      contact_email: "",
+      contact_phone: "",
+      business_type: "",
+      tax_id: "",
       is_active: true,
     },
   });
 
   useEffect(() => {
-    if (user) {
+    if (business) {
       form.reset({
-        full_name: user.full_name ?? "",
-        email: user.email ?? "",
-        phone: user.phone ?? "",
-        role: (user.role ?? "user") as UserFormData["role"],
-        business_id: user.business_id ?? null,
-        is_active: user.is_active ?? true,
+        name: business.name ?? "",
+        description: business.description ?? "",
+        address: business.address ?? "",
+        city: business.city ?? "",
+        state: business.state ?? "",
+        zip_code: business.zip_code ?? "",
+        country: business.country ?? "US",
+        contact_email: business.contact_email ?? "",
+        contact_phone: business.contact_phone ?? "",
+        business_type: business.business_type ?? "",
+        tax_id: business.tax_id ?? "",
+        is_active: business.is_active ?? true,
       });
     }
-  }, [user, form]);
+  }, [business, form]);
 
-  const onSubmit = (data: UserFormData) => {
+  const onSubmit = (data: BusinessFormData) => {
     if (!id) return;
-    updateUser(id, data);
+    updateBusiness(id, data);
   };
 
   if (isLoading) {
@@ -65,10 +78,10 @@ const EditUser = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <p className="text-destructive">Failed to load user</p>
+            <p className="text-destructive">Failed to load business</p>
             <Button
               variant="outline"
-              onClick={() => navigate("/users")}
+              onClick={() => navigate("/businesses")}
               className="mt-4"
             >
               Go Back
@@ -79,15 +92,15 @@ const EditUser = () => {
     );
   }
 
-  if (!user && !isLoading) {
+  if (!business && !isLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <p className="text-muted-foreground">User not found</p>
+            <p className="text-muted-foreground">Business not found</p>
             <Button
               variant="outline"
-              onClick={() => navigate("/users")}
+              onClick={() => navigate("/businesses")}
               className="mt-4"
             >
               Go Back
@@ -105,25 +118,25 @@ const EditUser = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/users")}
+            onClick={() => navigate("/businesses")}
             className="hover:bg-primary hover:bg-opacity-10"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Edit User</h1>
+            <h1 className="text-3xl font-bold">Edit Business</h1>
             <p className="text-muted-foreground mt-1">
-              Update user information
+              Update business information
             </p>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>User Information</CardTitle>
+            <CardTitle>Business Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <UserForm
+            <BusinessForm
               form={form}
               onSubmit={onSubmit}
               isLoading={isUpdating}
@@ -136,4 +149,4 @@ const EditUser = () => {
   );
 };
 
-export default EditUser;
+export default EditBusiness;

@@ -14,6 +14,7 @@ import { LogOut, User, Settings } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { ReactNode } from "react";
 import { useLogout } from "@/hooks/useAuth";
+import { useCurrentProfile } from "@/hooks/queries/useProfileQueries";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -23,7 +24,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user } = useAuthContext();
   const { logout } = useLogout();
 
-  const getUserInitials = () => {
+  const { data: profile } = useCurrentProfile(user?.id);
+
+  const userInitials = () => {
     const name = user?.user_metadata?.full_name || user?.email || "User";
     return name
       .split(" ")
@@ -42,7 +45,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <div className="flex items-center">
               <SidebarTrigger className="mr-4" />
               <h2 className="text-xl font-semibold">
-                Parking Management System
+                {profile?.businesses?.name}
               </h2>
             </div>
             <div className="flex items-center space-x-4">
@@ -55,7 +58,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user?.user_metadata?.avatar_url} />
                       <AvatarFallback className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm">
-                        {getUserInitials()}
+                        {userInitials()}
                       </AvatarFallback>
                     </Avatar>
                   </Button>

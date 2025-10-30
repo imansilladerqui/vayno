@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
-import { useSignIn, useSignUp, useSignOut } from "@/hooks/queries/useAuth";
+import { useSignIn, useSignUp, useSignOut } from "@/hooks/useAuthManagement";
 import { getErrorMessage, ROUTES, delay } from "@/lib/utils";
 
 // Sign in schema
@@ -31,10 +31,11 @@ export const useSigninForm = () => {
   const onSubmit = async (data: SigninFormData) => {
     try {
       setError(null);
-      await signInMutation.mutateAsync({
+      await signInMutation.signInAsync({
         email: data.email,
         password: data.password,
       });
+
       navigate(ROUTES.DASHBOARD);
     } catch (err) {
       setError(getErrorMessage(err, "An error occurred during login"));
@@ -97,7 +98,7 @@ export const useSignupForm = () => {
   const onSubmit = async (data: SignupFormData) => {
     try {
       setError(null);
-      await signUpMutation.mutateAsync({
+      await signUpMutation.signUpAsync({
         email: data.email,
         password: data.password,
         fullName: data.fullName,
@@ -130,8 +131,11 @@ export const useLogout = () => {
   const signOutMutation = useSignOut();
 
   const logout = () => {
-    signOutMutation.mutate();
-    navigate(ROUTES.LOGIN);
+    signOutMutation.signOut({
+      onSuccess: () => {
+        navigate(ROUTES.LOGIN);
+      },
+    });
   };
 
   return { logout, isPending: signOutMutation.isPending };

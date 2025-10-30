@@ -1,66 +1,50 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ParkingGrid } from "@/components/dashboard/ParkingGrid";
-import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { RecentActivityCard } from "@/components/dashboard/RecentActivityCard";
+import { LatestUsersCard } from "@/components/dashboard/LatestUsersCard";
+import { TopBusinessesCard } from "@/components/dashboard/TopBusinessesCard";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Car,
   DollarSign,
   TrendingUp,
   AlertCircle,
-  Loader2,
-  AlertTriangle,
+  Users,
+  Building2,
+  Activity,
 } from "lucide-react";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useDashboard } from "@/hooks/useDashboard";
+import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Dashboard = () => {
-  const {
-    occupancyStats,
-    revenue,
-    isLoading,
-    error: hasError,
-  } = useDashboardStats();
+  const navigate = useNavigate();
+  const { data, isLoading, error } = useDashboard();
 
-  if (hasError) {
+  if (error || isLoading) {
     return (
       <DashboardLayout>
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Welcome back! Here's what's happening today.
-            </p>
           </div>
 
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to load dashboard data. Please check your connection and
-              try again.
-            </AlertDescription>
-          </Alert>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Welcome back! Here's what's happening today.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading dashboard data...</p>
+          {error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {error instanceof Error
+                  ? error.message
+                  : "Failed to load dashboard data. Please check your connection and try again."}
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="flex items-center justify-center h-64">
+              <LoadingSpinner size="lg" text="Loading dashboard data..." />
             </div>
-          </div>
+          )}
         </div>
       </DashboardLayout>
     );
@@ -73,38 +57,122 @@ const Dashboard = () => {
     reserved: reservedSpots,
     maintenance: maintenanceSpots,
     occupancyPercentage,
-  } = occupancyStats || {};
+  } = data.occupancyStats || {};
+
+  const revenue = data.revenue || 0;
+  const businesses = data.businesses || [];
+  const users = data.users || [];
+  const activities = data.activities || [];
+  const stats = data.stats;
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Welcome back! Here's what's happening today.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold">Dashboard</h1>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-purple-500">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Total Businesses
+                  </p>
+                  <p className="text-3xl font-bold">{stats.totalBusinesses}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stats.activeBusinesses} active
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Total Users
+                  </p>
+                  <p className="text-3xl font-bold">{stats.totalUsers}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stats.activeUsers} active
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-green-500">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Total Parking Spots
+                  </p>
+                  <p className="text-3xl font-bold">{stats.totalSpots}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Across all businesses
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                  <Activity className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-orange-500">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Growth</p>
+                  <p className="text-3xl font-bold">+12%</p>
+                  <p className="text-xs text-green-600 mt-1 flex items-center">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    This month
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/20 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Spots"
-            value={totalSpots.toString()}
+            value={totalSpots?.toString() || "0"}
             icon={Car}
             variant="default"
           />
           <StatCard
             title="Occupied"
-            value={occupiedSpots.toString()}
+            value={occupiedSpots?.toString() || "0"}
             icon={AlertCircle}
             trend={{
-              value: `${occupancyPercentage}% occupancy`,
-              isPositive: occupiedSpots > 0,
+              value: `${occupancyPercentage || 0}% occupancy`,
+              isPositive: (occupiedSpots || 0) > 0,
             }}
             variant="danger"
           />
           <StatCard
             title="Available"
-            value={availableSpots.toString()}
+            value={availableSpots?.toString() || "0"}
             icon={TrendingUp}
             variant="success"
           />
@@ -120,42 +188,58 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Additional Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <StatCard
             title="Reserved"
-            value={reservedSpots.toString()}
+            value={reservedSpots?.toString() || "0"}
             icon={AlertCircle}
             variant="warning"
           />
           <StatCard
             title="Maintenance"
-            value={maintenanceSpots.toString()}
+            value={maintenanceSpots?.toString() || "0"}
             icon={AlertCircle}
             variant="default"
           />
           <StatCard
             title="Occupancy Rate"
-            value={`${occupancyPercentage}%`}
+            value={`${occupancyPercentage || 0}%`}
             icon={TrendingUp}
             variant={
-              occupancyPercentage > 80
+              (occupancyPercentage || 0) > 80
                 ? "danger"
-                : occupancyPercentage > 60
+                : (occupancyPercentage || 0) > 60
                 ? "warning"
                 : "success"
             }
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <ParkingGrid />
-          </div>
-          <div>
-            <ActivityFeed />
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TopBusinessesCard
+            businesses={businesses}
+            onViewAll={() => navigate("/businesses")}
+            onBusinessClick={(businessId) =>
+              navigate(`/businesses/${businessId}/edit`)
+            }
+            limit={5}
+          />
+
+          <LatestUsersCard
+            users={users}
+            onViewAll={() => navigate("/users")}
+            onUserClick={(userId) => navigate(`/users/${userId}/edit`)}
+            limit={5}
+          />
         </div>
+
+        <RecentActivityCard
+          activities={activities}
+          onViewAll={() => navigate("/activity")}
+          limit={5}
+        />
+
+        <ParkingGrid parkingSpots={data.parkingSpots} />
       </div>
     </DashboardLayout>
   );

@@ -21,7 +21,7 @@ const Header = ({ onBack }: { onBack?: () => void }) => {
         <Button
           variant="ghost"
           onClick={handleBack}
-          className="text-white hover:bg-white/10 h-10 w-10 p-0 -ml-16"
+          className="text-white hover:bg-primary hover:bg-opacity-20 h-10 w-10 p-0 -ml-16"
         >
           <ArrowLeft className="w-6 h-6" />
         </Button>

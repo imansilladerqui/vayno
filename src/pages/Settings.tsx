@@ -1,5 +1,11 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,11 +29,19 @@ const Settings = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Business Name</Label>
-              <Input id="name" placeholder="Enter business name" defaultValue="Downtown Parking" />
+              <Input
+                id="name"
+                placeholder="Enter business name"
+                defaultValue="Downtown Parking"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="address">Address</Label>
-              <Input id="address" placeholder="Enter address" defaultValue="123 Main St, City" />
+              <Input
+                id="address"
+                placeholder="Enter address"
+                defaultValue="123 Main St, City"
+              />
             </div>
             <Button>Save Changes</Button>
           </CardContent>
@@ -41,11 +55,21 @@ const Settings = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="hourly">Hourly Rate ($)</Label>
-              <Input id="hourly" type="number" placeholder="0.00" defaultValue="5.00" />
+              <Input
+                id="hourly"
+                type="number"
+                placeholder="0.00"
+                defaultValue="5.00"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="daily">Daily Maximum ($)</Label>
-              <Input id="daily" type="number" placeholder="0.00" defaultValue="30.00" />
+              <Input
+                id="daily"
+                type="number"
+                placeholder="0.00"
+                defaultValue="30.00"
+              />
             </div>
             <Button>Update Rates</Button>
           </CardContent>
@@ -59,7 +83,12 @@ const Settings = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="capacity">Total Spots</Label>
-              <Input id="capacity" type="number" placeholder="100" defaultValue="100" />
+              <Input
+                id="capacity"
+                type="number"
+                placeholder="100"
+                defaultValue="100"
+              />
             </div>
             <Button>Update Capacity</Button>
           </CardContent>

@@ -1,6 +1,6 @@
 import { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface SubmitButtonProps {
   isLoading: boolean;
@@ -23,7 +23,7 @@ export const SubmitButton = ({
     >
       {isLoading ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <LoadingSpinner size="sm" className="mr-2" />
           {loadingText}
         </>
       ) : (

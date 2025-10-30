@@ -61,8 +61,53 @@ export const ROUTES = {
 } as const;
 
 /**
+ * User roles constants
+ */
+export const USER_ROLES = {
+  USER: "user",
+  ADMIN: "admin",
+  SUPERADMIN: "superadmin",
+} as const;
+
+export type UserRoleType = (typeof USER_ROLES)[keyof typeof USER_ROLES];
+
+/**
  * Delay helper for timed operations
  */
 export const delay = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+/**
+ * Get user initials from a name string
+ * @param name - The full name string
+ * @returns The first letters of each word, up to 2 characters
+ */
+export const getInitials = (name: string): string => {
+  if (!name) return "";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+/**
+ * Format a timestamp as a relative time string (e.g., "5 mins ago", "2 hours ago")
+ * @param timestamp - ISO timestamp string
+ * @returns Human-readable relative time string
+ */
+export const formatTimeAgo = (timestamp: string): string => {
+  const now = new Date();
+  const time = new Date(timestamp);
+  const diffMs = now.getTime() - time.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
 };

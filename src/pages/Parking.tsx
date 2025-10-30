@@ -12,74 +12,107 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Car,
-  Clock,
-  DollarSign,
-  Loader2,
-  AlertTriangle,
-  Plus,
-} from "lucide-react";
+import { Car, Clock, DollarSign, AlertTriangle, Plus } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useParkingManagement } from "@/hooks/useParkingManagement";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { ParkingSpot, ActiveSession, ParkingStatus } from "@/types";
+import type {
+  ParkingSpot,
+  ParkingStatus,
+  ParkingSessionWithDetails,
+} from "@/types";
 
 const Parking = () => {
+  const [selectedSpot, setSelectedSpot] = useState<ParkingSpot | null>(null);
+  const [selectedSession, setSelectedSession] =
+    useState<ParkingSessionWithDetails | null>(null);
+  const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+  const [isCheckOutOpen, setIsCheckOutOpen] = useState(false);
+  const [vehiclePlate, setVehiclePlate] = useState("");
+
   const {
     parkingSpots: spots,
     activeSessions,
-    isLoading,
-    error: hasError,
-    selectedSpot,
-    selectedSession,
-    isCheckInOpen,
-    isCheckOutOpen,
-    setIsCheckInOpen,
-    setIsCheckOutOpen,
-    checkInVehicle,
-    checkOutVehicle,
-    updateSpotStatus,
-    openCheckIn,
-    openCheckOut,
+    isLoadingSpots,
+    isLoadingSessions,
+    spotsError,
+    sessionsError,
     isCheckingIn,
     isCheckingOut,
     isUpdatingSpot,
+    checkIn,
+    checkOut,
+    updateSpot,
   } = useParkingManagement();
 
-  const [vehiclePlate, setVehiclePlate] = useState("");
+  const isLoading = isLoadingSpots || isLoadingSessions;
+  const hasError = spotsError || sessionsError;
 
-  // Create a map of active sessions by spot ID for quick lookup
   const activeSessionsMap =
     activeSessions?.reduce((acc, session) => {
-      acc[session.spot_id] = session;
+      if (session.spot_id) {
+        acc[session.spot_id] = session;
+      }
       return acc;
-    }, {} as Record<string, ActiveSession>) || {};
+    }, {} as Record<string, ParkingSessionWithDetails>) || {};
 
-  const handleCheckIn = async () => {
+  const handleCheckIn = () => {
     if (!selectedSpot || !vehiclePlate.trim()) return;
 
-    try {
-      await checkInVehicle(selectedSpot.id, vehiclePlate.trim());
-      setVehiclePlate("");
-    } catch {
-      // Error handled by toast notification
-    }
+    checkIn(
+      {
+        spotId: selectedSpot.id,
+        vehiclePlate: vehiclePlate.trim(),
+        vehicleType: "car",
+      },
+      {
+        onSuccess: () => {
+          setIsCheckInOpen(false);
+          setSelectedSpot(null);
+          setVehiclePlate("");
+        },
+      }
+    );
   };
 
-  const handleCheckOut = async (
+  const handleCheckOut = (
     sessionId: string,
     paymentMethod: string = "cash"
   ) => {
-    try {
-      await checkOutVehicle(sessionId, paymentMethod);
-    } catch {
-      // Error handled by toast notification
-    }
+    checkOut(
+      { sessionId, paymentMethod },
+      {
+        onSuccess: () => {
+          setIsCheckOutOpen(false);
+          setSelectedSession(null);
+        },
+      }
+    );
   };
 
   const handleStatusChange = (spotId: string, newStatus: string) => {
-    updateSpotStatus(spotId, newStatus as ParkingStatus);
+    updateSpot(
+      {
+        id: spotId,
+        updates: { status: newStatus as ParkingStatus },
+      },
+      {
+        onSuccess: () => {
+          // Toast is handled by management hook
+        },
+      }
+    );
+  };
+
+  const openCheckIn = (spot: ParkingSpot) => {
+    setSelectedSpot(spot);
+    setIsCheckInOpen(true);
+  };
+
+  const openCheckOut = (session: ParkingSessionWithDetails) => {
+    setSelectedSession(session);
+    setIsCheckOutOpen(true);
   };
 
   const formatDuration = (checkInTime: string) => {
@@ -130,10 +163,7 @@ const Parking = () => {
           </div>
 
           <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading parking spots...</p>
-            </div>
+            <LoadingSpinner size="lg" text="Loading parking spots..." />
           </div>
         </div>
       </DashboardLayout>
@@ -234,7 +264,9 @@ const Parking = () => {
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Clock className="h-4 w-4" />
                         <span>
-                          {formatDuration(activeSession.check_in_time)}
+                          {activeSession.check_in_time
+                            ? formatDuration(activeSession.check_in_time)
+                            : "-"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm font-semibold">
@@ -242,7 +274,7 @@ const Parking = () => {
                         <span>
                           $
                           {activeSession.parking_spots?.parking_lots
-                            ?.hourly_rate || 0}
+                            ?.hourly_rate ?? 0}
                           /hr
                         </span>
                       </div>
@@ -256,7 +288,7 @@ const Parking = () => {
                         disabled={isCheckingOut}
                       >
                         {isCheckingOut ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <LoadingSpinner size="sm" />
                         ) : (
                           "Check Out"
                         )}
@@ -278,7 +310,7 @@ const Parking = () => {
                         disabled={isCheckingIn}
                       >
                         {isCheckingIn ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <LoadingSpinner size="sm" />
                         ) : (
                           <>
                             <Plus className="h-4 w-4 mr-2" />
@@ -302,7 +334,7 @@ const Parking = () => {
                         disabled={isUpdatingSpot}
                       >
                         {isUpdatingSpot ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <LoadingSpinner size="sm" />
                         ) : (
                           "Mark Available"
                         )}
@@ -323,7 +355,7 @@ const Parking = () => {
                         disabled={isUpdatingSpot}
                       >
                         {isUpdatingSpot ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <LoadingSpinner size="sm" />
                         ) : (
                           "Mark Available"
                         )}
@@ -364,11 +396,7 @@ const Parking = () => {
                 onClick={handleCheckIn}
                 disabled={!vehiclePlate.trim() || isCheckingIn}
               >
-                {isCheckingIn ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Check In"
-                )}
+                {isCheckingIn ? <LoadingSpinner size="sm" /> : "Check In"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -394,8 +422,9 @@ const Parking = () => {
                 <Clock className="h-4 w-4" />
                 <span>
                   Duration:{" "}
-                  {selectedSession &&
-                    formatDuration(selectedSession.check_in_time)}
+                  {selectedSession && selectedSession.check_in_time
+                    ? formatDuration(selectedSession.check_in_time)
+                    : "-"}
                 </span>
               </div>
             </div>
@@ -407,16 +436,14 @@ const Parking = () => {
                 Cancel
               </Button>
               <Button
-                onClick={() =>
-                  selectedSession && handleCheckOut(selectedSession.id, "cash")
-                }
-                disabled={isCheckingOut}
+                onClick={() => {
+                  if (selectedSession?.id) {
+                    handleCheckOut(selectedSession.id, "cash");
+                  }
+                }}
+                disabled={isCheckingOut || !selectedSession?.id}
               >
-                {isCheckingOut ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Check Out"
-                )}
+                {isCheckingOut ? <LoadingSpinner size="sm" /> : "Check Out"}
               </Button>
             </DialogFooter>
           </DialogContent>

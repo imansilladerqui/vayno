@@ -1,36 +1,27 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { RouteLoadingState } from "@/components/RouteLoadingState";
+import { ROUTES } from "@/lib/utils";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requireSuperAdmin?: boolean;
+  redirectTo?: string;
 }
 
 const ProtectedRoute = ({
   children,
-  requireSuperAdmin = false,
+  redirectTo = ROUTES.LOGIN,
 }: ProtectedRouteProps) => {
   const location = useLocation();
-  const { user, isSuperAdmin, isLoading } = useAuthContext();
+  const { user, isLoading } = useAuthContext();
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="mt-4 text-gray-400">Loading...</p>
-        </div>
-      </div>
-    );
+    return <RouteLoadingState />;
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  if (requireSuperAdmin && !isSuperAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
   return <>{children}</>;

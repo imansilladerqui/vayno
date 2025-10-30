@@ -14,11 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Save, Loader2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import { type UserFormData } from "@/hooks/useUserManagement";
+import { useBusinessManagement } from "@/hooks/useBusinessManagement";
+import { FormActions } from "@/components/forms/FormActions";
 
 interface UserFormProps {
   form: UseFormReturn<UserFormData>;
@@ -35,15 +34,7 @@ export const UserForm = ({
   mode = "create",
   onCancel,
 }: UserFormProps) => {
-  const navigate = useNavigate();
-
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    } else {
-      navigate("/users");
-    }
-  };
+  const { businesses, isLoading: isLoadingBusinesses } = useBusinessManagement();
 
   return (
     <Form {...form}>
@@ -53,7 +44,7 @@ export const UserForm = ({
           name="full_name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Full Name</FormLabel>
+              <FormLabel>Full Name *</FormLabel>
               <FormControl>
                 <Input placeholder="John Doe" {...field} />
               </FormControl>
@@ -66,7 +57,7 @@ export const UserForm = ({
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Email *</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="john@example.com" {...field} />
               </FormControl>
@@ -100,7 +91,7 @@ export const UserForm = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="customer">Customer</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="superadmin">SuperAdmin</SelectItem>
                 </SelectContent>
@@ -109,16 +100,73 @@ export const UserForm = ({
             </FormItem>
           )}
         />
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <Save className="mr-2 h-4 w-4" />
-            {mode === "create" ? "Create User" : "Save Changes"}
-          </Button>
-        </div>
+        <FormField
+          control={form.control}
+          name="business_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Business (Optional)</FormLabel>
+              <Select
+                onValueChange={(value) =>
+                  field.onChange(value === "none" ? null : value)
+                }
+                value={field.value || "none"}
+                disabled={isLoadingBusinesses}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a business" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {businesses && businesses.length > 0 ? (
+                    businesses.map((business) => (
+                      <SelectItem key={business.id} value={business.id}>
+                        {business.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      No businesses available
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="is_active"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select
+                onValueChange={(value) => field.onChange(value === "true")}
+                value={field.value ? "true" : "false"}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="true">Active</SelectItem>
+                  <SelectItem value="false">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormActions
+          isLoading={isLoading}
+          mode={mode}
+          entityName="User"
+          onCancel={onCancel}
+        />
       </form>
     </Form>
   );
