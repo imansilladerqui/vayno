@@ -14,7 +14,7 @@ import { useBusinessManagement } from "@/hooks/useBusinessManagement";
 
 const CreateBusiness = () => {
   const navigate = useNavigate();
-  const { createBusiness, isCreating } = useBusinessManagement();
+  const { createBusiness } = useBusinessManagement();
 
   const form = useForm<BusinessFormData>({
     resolver: zodResolver(businessSchema),
@@ -52,9 +52,7 @@ const CreateBusiness = () => {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Create Business</h1>
-            <p className="text-muted-foreground mt-1">
-              Add a new business to the system
-            </p>
+            <p className="text-muted-foreground mt-1">Add a new business</p>
           </div>
         </div>
 
@@ -63,12 +61,7 @@ const CreateBusiness = () => {
             <CardTitle>Business Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <BusinessForm
-              form={form}
-              onSubmit={onSubmit}
-              isLoading={isCreating}
-              mode="create"
-            />
+            <BusinessForm form={form} onSubmit={onSubmit} mode="create" />
           </CardContent>
         </Card>
       </div>

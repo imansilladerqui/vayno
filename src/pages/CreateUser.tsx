@@ -57,9 +57,7 @@ const CreateUser = () => {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Create User</h1>
-            <p className="text-muted-foreground mt-1">
-              Add a new user to the system
-            </p>
+            <p className="text-muted-foreground mt-1">Add a new user</p>
           </div>
         </div>
 
@@ -68,12 +66,7 @@ const CreateUser = () => {
             <CardTitle>User Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <UserForm
-              form={form}
-              onSubmit={onSubmit}
-              isLoading={createUserMutation.isPending}
-              mode="create"
-            />
+            <UserForm form={form} onSubmit={onSubmit} mode="create" />
           </CardContent>
         </Card>
       </div>

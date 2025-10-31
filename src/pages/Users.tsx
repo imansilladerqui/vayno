@@ -12,14 +12,15 @@ import {
   Shield,
   UserCheck,
   Plus,
+  Eye,
 } from "lucide-react";
 import { useUserManagement } from "@/hooks/useUserManagement";
 import { useDialogs } from "@/contexts/DialogContext";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { format } from "date-fns";
 import { getInitials } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import type { Profile } from "@/types";
 
 const Users = () => {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ const Users = () => {
     navigate(`/users/${userId}/edit`);
   };
 
-  const deleteUser = (user: { id: string; full_name?: string }) => {
+  const deleteUser = (user: Profile) => {
     deleteUserDialog.setSelectedUser(user);
     deleteUserDialog.show();
   };
@@ -53,13 +54,11 @@ const Users = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Users</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage and oversee all users in the system
-            </p>
+            <p className="text-muted-foreground mt-1">Manage all users</p>
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="secondary" className="text-lg px-3 py-1">
-              {users?.length || 0} Total
+              {users?.length} Total
             </Badge>
             <Button onClick={() => navigate("/users/new")}>
               <Plus className="h-4 w-4 mr-2" />
@@ -67,29 +66,6 @@ const Users = () => {
             </Button>
           </div>
         </div>
-
-        {isLoading && (
-          <Card>
-            <CardContent className="flex items-center justify-center p-12">
-              <LoadingSpinner size="lg" text="Loading users..." />
-            </CardContent>
-          </Card>
-        )}
-
-        {error && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                <p className="text-destructive font-medium">
-                  Error loading users
-                </p>
-                <p className="text-destructive/80 text-sm mt-1">
-                  {error.message}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {!isLoading && !error && users && users.length === 0 && (
           <Card>
@@ -157,6 +133,15 @@ const Users = () => {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                          onClick={() => navigate(`/users/${userItem.id}`)}
+                          aria-label="View user"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
                           onClick={() => editUser(userItem.id)}
                           aria-label="Edit user"
                         >
@@ -166,7 +151,9 @@ const Users = () => {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => deleteUser(userItem)}
+                          onClick={() =>
+                            deleteUser(userItem as unknown as Profile)
+                          }
                           aria-label="Delete user"
                         >
                           <Trash2 className="h-4 w-4" />

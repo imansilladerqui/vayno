@@ -1,79 +1,37 @@
 import { toast } from "sonner";
 import {
   useParkingSpots,
-  useActiveSessions,
   useCheckInVehicle,
   useCheckOutVehicle,
   useUpdateParkingSpot,
-  useParkingLots,
-  useCreateParkingLot,
-  useUpdateParkingLot,
-  useCreateParkingSpots,
   useCalculateCurrentCost,
-  useActivityLogs,
 } from "@/hooks/queries/useParkingQueries";
-import type {
-  ParkingLotInsert,
-  ParkingLotUpdate,
-  ParkingSpotInsert,
-  ParkingSpotUpdate,
-} from "@/types";
+import type { ParkingSpotUpdate } from "@/types";
+import { formatDurationMsToHoursAndMinutes } from "@/lib/utils";
 
-type ParkingManagementOptions = {
-  includeSpots?: boolean;
-  includeActiveSessions?: boolean;
-  includeParkingLots?: boolean;
-  includeActivities?: boolean;
-};
-
-export const useParkingManagement = (options: ParkingManagementOptions = {}) => {
-  const {
-    includeSpots = true,
-    includeActiveSessions = true,
-    includeParkingLots = true,
-    includeActivities = true,
-  } = options;
-
-  const parkingSpotsQuery = includeSpots ? useParkingSpots() : ({} as any);
-  const activeSessionsQuery = includeActiveSessions
-    ? useActiveSessions()
-    : ({} as any);
+export const useParkingManagement = (businessId?: string) => {
+  const { data: parkingSpots } = useParkingSpots(businessId);
   const checkInMutation = useCheckInVehicle();
   const checkOutMutation = useCheckOutVehicle();
   const updateSpotMutation = useUpdateParkingSpot();
-  const parkingLotsQuery = includeParkingLots ? useParkingLots() : ({} as any);
-  const createParkingLotMutation = useCreateParkingLot();
-  const updateParkingLotMutation = useUpdateParkingLot();
-  const createParkingSpotsMutation = useCreateParkingSpots();
   const calculateCostMutation = useCalculateCurrentCost();
-  const activitiesQuery = includeActivities ? useActivityLogs() : ({} as any);
 
-  const occupancyStats = (() => {
-    const spots = (parkingSpotsQuery.data as unknown[]) || [];
-    const counts = spots.reduce(
-      (acc: Record<string, number>, spot) => {
-        const status = (spot as { status?: string }).status;
-        if (status) acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      },
-      {}
-    );
+  const counts = (parkingSpots ?? []).reduce(
+    (acc: Record<string, number>, spot) => {
+      const status = (spot as { status?: string }).status;
+      if (status) acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    },
+    {}
+  );
 
-    const total = spots.length;
-    const occupied = counts["occupied"] || 0;
-    const reserved = counts["reserved"] || 0;
-    const available = counts["available"] || 0;
-    const maintenance = counts["maintenance"] || 0;
-
-    return {
-      total,
-      available,
-      occupied,
-      reserved,
-      maintenance,
-      occupancyPercentage: total > 0 ? Math.round((occupied / total) * 100) : 0,
-    };
-  })();
+  const totalSpots = parkingSpots?.length || 0;
+  const occupiedSpots = counts["occupied"] || 0;
+  const reservedSpots = counts["reserved"] || 0;
+  const availableSpots = counts["available"] || 0;
+  const maintenanceSpots = counts["maintenance"] || 0;
+  const rate =
+    totalSpots > 0 ? Math.round((occupiedSpots / totalSpots) * 100) : 0;
 
   const checkIn = (
     variables: {
@@ -143,74 +101,13 @@ export const useParkingManagement = (options: ParkingManagementOptions = {}) => 
     });
   };
 
-  const createParkingLot = (
-    variables: ParkingLotInsert,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    createParkingLotMutation.mutate(variables, {
-      onSuccess: () => {
-        toast.success("Parking Lot Created", {
-          description: "Parking lot has been created successfully.",
-        });
-        options?.onSuccess?.();
-      },
-      onError: (error: Error) => {
-        toast.error("Creation Failed", {
-          description:
-            error.message || "Failed to create parking lot. Please try again.",
-        });
-        options?.onError?.(error);
-      },
-    });
-  };
-
-  const updateParkingLot = (
-    variables: { id: string; updates: ParkingLotUpdate },
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    updateParkingLotMutation.mutate(variables, {
-      onSuccess: () => {
-        toast.success("Parking Lot Updated", {
-          description: "Parking lot has been updated successfully.",
-        });
-        options?.onSuccess?.();
-      },
-      onError: (error: Error) => {
-        toast.error("Update Failed", {
-          description:
-            error.message || "Failed to update parking lot. Please try again.",
-        });
-        options?.onError?.(error);
-      },
-    });
-  };
-
-  const createParkingSpots = (
-    variables: ParkingSpotInsert[],
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    createParkingSpotsMutation.mutate(variables, {
-      onSuccess: () => {
-        toast.success("Parking Spots Created", {
-          description: `${variables.length} parking spot(s) have been created successfully.`,
-        });
-        options?.onSuccess?.();
-      },
-      onError: (error: Error) => {
-        toast.error("Creation Failed", {
-          description:
-            error.message ||
-            "Failed to create parking spots. Please try again.",
-        });
-        options?.onError?.(error);
-      },
-    });
-  };
-
   const calculateCurrentCost = async (sessionId: string) => {
     try {
       const result = await calculateCostMutation.mutateAsync(sessionId);
-      return result;
+      return {
+        ...result,
+        duration: formatDurationMsToHoursAndMinutes(result.durationMs),
+      };
     } catch (error) {
       toast.error("Calculation Failed", {
         description:
@@ -222,46 +119,32 @@ export const useParkingManagement = (options: ParkingManagementOptions = {}) => 
     }
   };
 
+  const statusCounts = (parkingSpots ?? []).reduce<Record<string, number>>(
+    (acc, spot) => {
+      const status = spot.status || "unknown";
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    },
+    {}
+  );
+
   return {
-    parkingSpots: parkingSpotsQuery.data,
-    activeSessions: activeSessionsQuery.data,
-    parkingLots: parkingLotsQuery.data,
-    occupancyStats,
-    activities: activitiesQuery.data,
-
-    isLoadingSpots: parkingSpotsQuery.isLoading,
-    isLoadingSessions: activeSessionsQuery.isLoading,
-    isLoadingLots: parkingLotsQuery.isLoading,
-    // derived occupancy has no extra loading
-    isLoadingActivities: activitiesQuery.isLoading,
-
-    spotsError: parkingSpotsQuery.error,
-    sessionsError: activeSessionsQuery.error,
-    lotsError: parkingLotsQuery.error,
-    activitiesError: activitiesQuery.error,
+    parkingSpots,
+    totalSpots,
+    rate,
+    reservedSpots,
+    maintenanceSpots,
+    availableSpots,
+    occupiedSpots,
+    statusCounts,
 
     isCheckingIn: checkInMutation.isPending,
     isCheckingOut: checkOutMutation.isPending,
     isUpdatingSpot: updateSpotMutation.isPending,
-    isCreatingLot: createParkingLotMutation.isPending,
-    isUpdatingLot: updateParkingLotMutation.isPending,
-    isCreatingSpots: createParkingSpotsMutation.isPending,
-    isCalculatingCost: calculateCostMutation.isPending,
 
     checkIn,
     checkOut,
     updateSpot,
-    createParkingLot,
-    updateParkingLot,
-    createParkingSpots,
     calculateCurrentCost,
-
-    checkInMutation,
-    checkOutMutation,
-    updateSpotMutation,
-    createParkingLotMutation,
-    updateParkingLotMutation,
-    createParkingSpotsMutation,
-    calculateCostMutation,
   };
 };

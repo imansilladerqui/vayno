@@ -27,7 +27,7 @@ type UserUpdateData = {
 export const useUserManagement = () => {
   const navigate = useNavigate();
   const { deleteUserDialog } = useDialogs();
-  const allUsersQuery = useAllUsers();
+  const { data, isLoading, error } = useAllUsers();
   const updateUserMutation = useUpdateUser();
 
   const editUser = (user: Profile) => {
@@ -50,13 +50,20 @@ export const useUserManagement = () => {
     );
   };
 
+  const totalUsers = data?.length;
+  const activeUsers = data?.filter((u) => u.is_active).length;
+  const displayedUsers = data?.slice(0, 5);
+
   return {
-    users: allUsersQuery.data,
-    isLoading: allUsersQuery.isLoading,
-    error: allUsersQuery.error,
+    users: data,
+    isLoading,
+    error,
     editUser,
     deleteUser,
     updateUser,
     isUpdating: updateUserMutation.isPending,
+    totalUsers,
+    activeUsers,
+    displayedUsers,
   };
 };

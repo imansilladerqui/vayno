@@ -11,10 +11,10 @@ import {
   Users,
   Building2,
   Activity,
+  Eye,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBusinessManagement } from "@/hooks/useBusinessManagement";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const Businesses = () => {
   const { businesses, isLoading, error, editBusiness, deleteBusiness } =
@@ -27,9 +27,6 @@ const Businesses = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Parking Businesses</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage and monitor all parking businesses
-            </p>
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="secondary" className="text-lg px-3 py-1">
@@ -44,29 +41,6 @@ const Businesses = () => {
             </Button>
           </div>
         </div>
-
-        {isLoading && (
-          <Card>
-            <CardContent className="flex items-center justify-center p-12">
-              <LoadingSpinner size="lg" text="Loading businesses..." />
-            </CardContent>
-          </Card>
-        )}
-
-        {error && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                <p className="text-destructive font-medium">
-                  Error loading businesses
-                </p>
-                <p className="text-destructive/80 text-sm mt-1">
-                  {error.message}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {!isLoading && !error && businesses && businesses.length === 0 && (
           <Card>
@@ -126,6 +100,15 @@ const Businesses = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                          onClick={() => navigate(`/business/${business.id}`)}
+                          aria-label="View business"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"

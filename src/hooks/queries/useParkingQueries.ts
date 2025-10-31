@@ -1,161 +1,33 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type {
-  ParkingLot,
-  ParkingLotInsert,
-  ParkingLotUpdate,
   ParkingSpot,
-  ParkingSpotInsert,
   ParkingSpotUpdate,
   ParkingSessionWithDetails,
   ParkingSpotWithLot,
-  ActivityLogWithProfile,
 } from "@/types";
 import { useCrudMutationConfig, EntityNames } from "@/lib/mutationHelpers";
 
-// Utility functions for parking operations
-const formatDuration = (milliseconds: number): string => {
-  const hours = Math.floor(milliseconds / (1000 * 60 * 60));
-  const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
-};
-
-const logActivity = async (
-  action: string,
-  tableName: string,
-  recordId: string,
-  oldValues: Record<string, unknown> | null,
-  newValues: Record<string, unknown> | null
-) => {
-  try {
-    await supabase.from("activity_logs").insert({
-      action,
-      table_name: tableName,
-      record_id: recordId,
-      old_values: (oldValues as unknown) || null,
-      new_values: (newValues as unknown) || null,
-      description: `${action} on ${tableName}`,
-    } as never);
-  } catch (error) {
-    console.error("Failed to log activity:", error);
-  }
-};
-
-export const parkingQueryKeys = {
-  parkingLots: ["parking-lots"] as const,
-  parkingLot: (id: string) => ["parking-lot", id] as const,
-  parkingSpots: (lotId?: string) => ["parking-spots", lotId] as const,
-  parkingSpot: (id: string) => ["parking-spot", id] as const,
-  parkingSessions: (filters?: {
-    userId?: string;
-    spotId?: string;
-    activeOnly?: boolean;
-  }) => ["parking-sessions", filters] as const,
-  activeSessions: ["active-sessions"] as const,
-  activityLogs: ["activity-logs"] as const,
-};
-
-export const useParkingLots = () => {
+export const useParkingSpots = (businessId?: string) => {
   return useQuery({
-    queryKey: parkingQueryKeys.parkingLots,
-    queryFn: async (): Promise<ParkingLot[]> => {
-      const { data, error } = await supabase
-        .from("parking_lots")
-        .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    },
-  });
-};
-
-export const useParkingLot = (id: string) => {
-  return useQuery({
-    queryKey: parkingQueryKeys.parkingLot(id),
-    queryFn: async (): Promise<ParkingLot | null> => {
-      const { data, error } = await supabase
-        .from("parking_lots")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id,
-  });
-};
-
-export const useCreateParkingLot = () => {
-  return useMutation({
-    mutationFn: async (lot: ParkingLotInsert): Promise<ParkingLot> => {
-      const { data, error } = await supabase
-        .from("parking_lots")
-        .insert(lot)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    ...useCrudMutationConfig<ParkingLot, Error, ParkingLotInsert>({
-      invalidateKeys: [["parking-lots"], ["parking-lot-stats"]],
-      entityName: EntityNames.ParkingLot,
-      action: "create",
-    }),
-  });
-};
-
-export const useUpdateParkingLot = () => {
-  return useMutation({
-    mutationFn: async ({
-      id,
-      updates,
-    }: {
-      id: string;
-      updates: ParkingLotUpdate;
-    }): Promise<ParkingLot> => {
-      const { data, error } = await supabase
-        .from("parking_lots")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    ...useCrudMutationConfig<
-      ParkingLot,
-      Error,
-      { id: string; updates: ParkingLotUpdate }
-    >({
-      invalidateKeys: [["parking-lots"], ["parking-lot-stats"]],
-      entityName: EntityNames.ParkingLot,
-      action: "update",
-    }),
-  });
-};
-
-export const useParkingSpots = (lotId?: string) => {
-  return useQuery({
-    queryKey: parkingQueryKeys.parkingSpots(lotId),
+    queryKey: ["parking-spots", businessId],
     queryFn: async (): Promise<ParkingSpotWithLot[]> => {
-      let query = supabase.from("parking_spots").select(
-        `
-          *,
-          parking_lots!inner(*)
-        `
-      );
+      let query = supabase
+        .from("parking_spots")
+        .select("*, parking_lots!inner(*)");
 
-      if (lotId) {
-        query = query.eq("lot_id", lotId);
+      if (businessId) {
+        const { data: lots } = await supabase
+          .from("parking_lots")
+          .select("id")
+          .eq("business_id", businessId);
+
+        if (!lots?.length) return [];
+
+        query = query.in(
+          "lot_id",
+          lots.map((lot) => lot.id)
+        );
       }
 
       const { data, error } = await query.order("spot_number", {
@@ -165,28 +37,6 @@ export const useParkingSpots = (lotId?: string) => {
       if (error) throw error;
       return data || [];
     },
-  });
-};
-
-export const useParkingSpot = (id: string) => {
-  return useQuery({
-    queryKey: parkingQueryKeys.parkingSpot(id),
-    queryFn: async (): Promise<ParkingSpotWithLot | null> => {
-      const { data, error } = await supabase
-        .from("parking_spots")
-        .select(
-          `
-          *,
-          parking_lots!inner(*)
-        `
-        )
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id,
   });
 };
 
@@ -221,91 +71,6 @@ export const useUpdateParkingSpot = () => {
   });
 };
 
-export const useCreateParkingSpots = () => {
-  return useMutation({
-    mutationFn: async (spots: ParkingSpotInsert[]): Promise<ParkingSpot[]> => {
-      const { data, error } = await supabase
-        .from("parking_spots")
-        .insert(spots)
-        .select();
-
-      if (error) throw error;
-      return data || [];
-    },
-    ...useCrudMutationConfig<ParkingSpot[], Error, ParkingSpotInsert[]>({
-      invalidateKeys: [["parking-spots"], ["occupancy-stats"]],
-      entityName: EntityNames.ParkingSpots,
-      action: "create",
-    }),
-  });
-};
-
-export const useParkingSessions = (filters?: {
-  userId?: string;
-  spotId?: string;
-  activeOnly?: boolean;
-}) => {
-  return useQuery({
-    queryKey: parkingQueryKeys.parkingSessions(filters),
-    queryFn: async (): Promise<ParkingSessionWithDetails[]> => {
-      let query = supabase.from("parking_sessions").select(
-        `
-          *,
-          parking_spots!inner(
-            *,
-            parking_lots!inner(*)
-          ),
-          profiles(*)
-        `
-      );
-
-      if (filters?.userId) {
-        query = query.eq("user_id", filters.userId);
-      }
-
-      if (filters?.spotId) {
-        query = query.eq("spot_id", filters.spotId);
-      }
-
-      if (filters?.activeOnly) {
-        query = query.is("check_out_time", null);
-      }
-
-      const { data, error } = await query.order("check_in_time", {
-        ascending: false,
-      });
-
-      if (error) throw error;
-      return data || [];
-    },
-  });
-};
-
-export const useActiveSessions = () => {
-  return useQuery({
-    queryKey: parkingQueryKeys.activeSessions,
-    queryFn: async (): Promise<ParkingSessionWithDetails[]> => {
-      const { data, error } = await supabase
-        .from("parking_sessions")
-        .select(
-          `
-          *,
-          parking_spots!inner(
-            *,
-            parking_lots!inner(*)
-          ),
-          profiles(*)
-        `
-        )
-        .is("check_out_time", null)
-        .order("check_in_time", { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    },
-  });
-};
-
 export const useCheckInVehicle = () => {
   return useMutation({
     mutationFn: async ({
@@ -319,7 +84,27 @@ export const useCheckInVehicle = () => {
       userId?: string;
       vehicleType?: "car" | "motorcycle" | "truck" | "van" | "other";
     }): Promise<ParkingSessionWithDetails> => {
-      // Validate spot availability
+      // Get current authenticated user
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !authUser) {
+        throw new Error("Authentication required to check in a vehicle");
+      }
+
+      // Get user profile to check role and business association
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, role, business_id")
+        .eq("id", authUser.id)
+        .single();
+
+      if (profileError || !profile) {
+        throw new Error("User profile not found");
+      }
+
       const { data: spot, error: spotError } = await supabase
         .from("parking_spots")
         .select("*")
@@ -365,6 +150,16 @@ export const useCheckInVehicle = () => {
         throw new Error("Parking lot not found");
       }
 
+      // Check if user has permission (admin/superadmin can check in for any user)
+      // Regular users can only check in for themselves or if no userId is provided
+      const isAdmin = profile.role === "admin" || profile.role === "superadmin";
+      const sessionUserId = userId || authUser.id;
+
+      // If userId is provided but user is not admin, verify it matches their own ID
+      if (userId && userId !== authUser.id && !isAdmin) {
+        throw new Error("You can only check in vehicles for yourself");
+      }
+
       try {
         const { error: spotUpdateError } = await supabase
           .from("parking_spots")
@@ -377,7 +172,7 @@ export const useCheckInVehicle = () => {
           .from("parking_sessions")
           .insert({
             spot_id: spotId,
-            user_id: userId || null,
+            user_id: sessionUserId,
             vehicle_plate: vehiclePlate.trim().toUpperCase(),
             vehicle_type: vehicleType,
             check_in_time: new Date().toISOString(),
@@ -398,15 +193,19 @@ export const useCheckInVehicle = () => {
           )
           .single();
 
-        if (sessionError) throw sessionError;
-
-        await logActivity(
-          "INSERT",
-          "parking_sessions",
-          session.id,
-          null,
-          session
-        );
+        if (sessionError) {
+          // Provide more helpful error messages based on RLS policy violations
+          if (sessionError.message?.includes("row-level security")) {
+            throw new Error(
+              `Permission denied: ${
+                isAdmin
+                  ? "Please contact your administrator"
+                  : "You don't have permission to check in vehicles. Contact an administrator."
+              }`
+            );
+          }
+          throw sessionError;
+        }
 
         return session;
       } catch (error) {
@@ -433,7 +232,6 @@ export const useCheckInVehicle = () => {
         ["parking-sessions"],
         ["active-sessions"],
         ["parking-spots"],
-        ["activity-logs"],
         ["occupancy-stats"],
       ],
       entityName: EntityNames.Vehicle,
@@ -536,14 +334,6 @@ export const useCheckOutVehicle = () => {
 
       if (paymentError) throw paymentError;
 
-      await logActivity(
-        "UPDATE",
-        "parking_sessions",
-        sessionId,
-        session,
-        updatedSession
-      );
-
       return updatedSession;
     },
     ...useCrudMutationConfig<
@@ -555,34 +345,12 @@ export const useCheckOutVehicle = () => {
         ["parking-sessions"],
         ["active-sessions"],
         ["parking-spots"],
-        ["activity-logs"],
         ["today-revenue"],
         ["occupancy-stats"],
       ],
       entityName: EntityNames.Vehicle,
       action: "check out",
     }),
-  });
-};
-
-export const useActivityLogs = (limit = 50) => {
-  return useQuery({
-    queryKey: parkingQueryKeys.activityLogs,
-    queryFn: async (): Promise<ActivityLogWithProfile[]> => {
-      const { data, error } = await supabase
-        .from("activity_logs")
-        .select(
-          `
-          *,
-          profiles(*)
-        `
-        )
-        .order("created_at", { ascending: false })
-        .limit(limit);
-
-      if (error) throw error;
-      return data || [];
-    },
   });
 };
 
@@ -628,7 +396,7 @@ export const useCalculateCurrentCost = () => {
 
       return {
         currentCost,
-        duration: formatDuration(durationMs),
+        durationMs,
         hourlyRate: lot.hourly_rate,
         dailyRate: lot.daily_rate,
       };

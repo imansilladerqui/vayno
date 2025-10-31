@@ -26,7 +26,6 @@ const Signup = () => {
     showConfirmPassword,
     setShowConfirmPassword,
     error,
-    isLoading,
     errors,
   } = useSignupForm();
 
@@ -102,12 +101,7 @@ const Signup = () => {
           />
 
           <div className="pt-6">
-            <SubmitButton
-              isLoading={isLoading}
-              icon={UserPlus}
-              loadingText="Creating Account..."
-              defaultText="Create Account"
-            />
+            <SubmitButton icon={UserPlus} defaultText="Create Account" />
           </div>
         </form>
 
