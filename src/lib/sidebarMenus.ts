@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   Car,
-  History,
   Settings,
   Users,
   Building2,
@@ -17,7 +16,6 @@ export interface MenuItem {
 export const USER_MENU_ITEMS: MenuItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Parking Spots", url: "/parking", icon: Car },
-  { title: "Activity", url: "/activity", icon: History },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
@@ -31,5 +29,4 @@ export const SUPERADMIN_MENU_ITEMS: MenuItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Users", url: "/users", icon: Users },
   { title: "Businesses", url: "/businesses", icon: Building2 },
-  { title: "Activity", url: "/activity", icon: History },
 ];

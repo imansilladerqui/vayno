@@ -13,12 +13,11 @@ import {
 } from "@/hooks/useBusinessManagement";
 import { BusinessForm } from "@/components/business/BusinessForm";
 import { useBusiness } from "@/hooks/queries/useBusinessQueries";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const EditBusiness = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { updateBusiness, isUpdating } = useBusinessManagement();
+  const { updateBusiness } = useBusinessManagement();
   const { data: business, isLoading, error } = useBusiness(id!);
 
   const form = useForm<BusinessFormData>({
@@ -62,16 +61,6 @@ const EditBusiness = () => {
     if (!id) return;
     updateBusiness(id, data);
   };
-
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <LoadingSpinner size="lg" centered />
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   if (error) {
     return (
@@ -136,12 +125,7 @@ const EditBusiness = () => {
             <CardTitle>Business Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <BusinessForm
-              form={form}
-              onSubmit={onSubmit}
-              isLoading={isUpdating}
-              mode="edit"
-            />
+            <BusinessForm form={form} onSubmit={onSubmit} mode="edit" />
           </CardContent>
         </Card>
       </div>

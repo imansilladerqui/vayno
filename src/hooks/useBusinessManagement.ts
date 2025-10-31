@@ -35,13 +35,13 @@ export const useBusinessManagement = () => {
   const navigate = useNavigate();
   const { deleteBusinessDialog } = useDialogs();
 
-  const allBusinessesQuery = useAllBusinesses();
+  const { data, isLoading, error } = useAllBusinesses();
   const updateBusinessMutation = useUpdateBusiness();
   const createBusinessMutation = useCreateBusiness();
   const deleteBusinessMutation = useDeleteBusiness();
 
   const editBusiness = (business: Business) => {
-    navigate(`/businesses/${business.id}/edit`);
+    navigate(`/business/${business.id}/edit`);
   };
 
   const handleDeleteBusiness = (business: Business) => {
@@ -89,10 +89,14 @@ export const useBusinessManagement = () => {
     });
   };
 
+  const totalBusinesses = data?.length;
+  const activeBusinesses = data?.filter((b) => b.is_active).length;
+  const displayedBusinesses = data?.slice(0, 5);
+
   return {
-    businesses: allBusinessesQuery.data,
-    isLoading: allBusinessesQuery.isLoading,
-    error: allBusinessesQuery.error,
+    businesses: data,
+    isLoading,
+    error,
 
     editBusiness,
     deleteBusiness: handleDeleteBusiness,
@@ -101,7 +105,9 @@ export const useBusinessManagement = () => {
     confirmDeleteBusiness,
 
     isUpdating: updateBusinessMutation.isPending,
-    isCreating: createBusinessMutation.isPending,
     isDeleting: deleteBusinessMutation.isPending,
+    totalBusinesses,
+    activeBusinesses,
+    displayedBusinesses,
   };
 };

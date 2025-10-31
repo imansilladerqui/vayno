@@ -20,7 +20,6 @@ const Login = () => {
     showPassword,
     setShowPassword,
     error,
-    isLoading,
     errors,
   } = useSigninForm();
 
@@ -65,12 +64,7 @@ const Login = () => {
           />
 
           <div className="pt-6">
-            <SubmitButton
-              isLoading={isLoading}
-              icon={LogIn}
-              loadingText="Signing In..."
-              defaultText="Sign In"
-            />
+            <SubmitButton icon={LogIn} defaultText="Sign In" />
           </div>
         </form>
 

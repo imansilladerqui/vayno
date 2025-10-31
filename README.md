@@ -16,7 +16,6 @@ A comprehensive parking lot management application that gives you complete contr
 - **Daily Revenue Tracking**: Monitor daily income with trend analysis
 - **Comprehensive Dashboard**: Overview of key metrics including occupancy rates
 - **Revenue Insights**: Track performance with percentage changes and trends
-- **Activity Feed**: Real-time updates on parking activities
 
 ### Business Control
 
@@ -85,14 +84,12 @@ This project is built with modern web technologies:
 
 - **Dashboard**: Overview of parking metrics and real-time status
 - **Parking**: Detailed view of all parking spots with management controls
-- **Activity**: Log of all parking activities and transactions
 - **Settings**: Application configuration and preferences
 
 ### Key Components
 
 - **ParkingGrid**: Visual representation of parking spots
 - **StatCard**: Key metrics display cards
-- **ActivityFeed**: Real-time activity updates
 - **DashboardLayout**: Consistent layout wrapper
 
 ## 🔧 Available Scripts

@@ -13,7 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Car, Clock, DollarSign, AlertTriangle, Plus } from "lucide-react";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useParkingManagement } from "@/hooks/useParkingManagement";
 import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -34,10 +33,6 @@ const Parking = () => {
   const {
     parkingSpots: spots,
     activeSessions,
-    isLoadingSpots,
-    isLoadingSessions,
-    spotsError,
-    sessionsError,
     isCheckingIn,
     isCheckingOut,
     isUpdatingSpot,
@@ -45,9 +40,6 @@ const Parking = () => {
     checkOut,
     updateSpot,
   } = useParkingManagement();
-
-  const isLoading = isLoadingSpots || isLoadingSessions;
-  const hasError = spotsError || sessionsError;
 
   const activeSessionsMap =
     activeSessions?.reduce((acc, session) => {
@@ -127,48 +119,6 @@ const Parking = () => {
     }
     return `${diffMins}m`;
   };
-
-  if (hasError) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">Parking Spots</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage and monitor all parking spots
-            </p>
-          </div>
-
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to load parking spots. Please check your connection and try
-              again.
-            </AlertDescription>
-          </Alert>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">Parking Spots</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage and monitor all parking spots
-            </p>
-          </div>
-
-          <div className="flex items-center justify-center h-64">
-            <LoadingSpinner size="lg" text="Loading parking spots..." />
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   if (!spots || spots.length === 0) {
     return (
@@ -287,11 +237,7 @@ const Parking = () => {
                         }}
                         disabled={isCheckingOut}
                       >
-                        {isCheckingOut ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          "Check Out"
-                        )}
+                        {isCheckingOut ? null : "Check Out"}
                       </Button>
                     </div>
                   )}
@@ -309,9 +255,7 @@ const Parking = () => {
                         }}
                         disabled={isCheckingIn}
                       >
-                        {isCheckingIn ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
+                        {isCheckingIn ? null : (
                           <>
                             <Plus className="h-4 w-4 mr-2" />
                             Check In
@@ -333,11 +277,7 @@ const Parking = () => {
                         onClick={() => handleStatusChange(spot.id, "available")}
                         disabled={isUpdatingSpot}
                       >
-                        {isUpdatingSpot ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          "Mark Available"
-                        )}
+                        {!isUpdatingSpot && "Mark Available"}
                       </Button>
                     </div>
                   )}
@@ -354,11 +294,7 @@ const Parking = () => {
                         onClick={() => handleStatusChange(spot.id, "available")}
                         disabled={isUpdatingSpot}
                       >
-                        {isUpdatingSpot ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          "Mark Available"
-                        )}
+                        {!isUpdatingSpot && "Mark Available"}
                       </Button>
                     </div>
                   )}
@@ -396,7 +332,7 @@ const Parking = () => {
                 onClick={handleCheckIn}
                 disabled={!vehiclePlate.trim() || isCheckingIn}
               >
-                {isCheckingIn ? <LoadingSpinner size="sm" /> : "Check In"}
+                {isCheckingIn ? null : "Check In"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -443,7 +379,7 @@ const Parking = () => {
                 }}
                 disabled={isCheckingOut || !selectedSession?.id}
               >
-                {isCheckingOut ? <LoadingSpinner size="sm" /> : "Check Out"}
+                {"Check Out"}
               </Button>
             </DialogFooter>
           </DialogContent>

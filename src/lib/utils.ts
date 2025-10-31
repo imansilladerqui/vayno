@@ -52,7 +52,6 @@ export const ROUTES = {
   LOGIN: "/login",
   DASHBOARD: "/dashboard",
   PARKING: "/parking",
-  ACTIVITY: "/activity",
   SETTINGS: "/settings",
   SIGNUP: "/signup",
   USERS: "/users",
@@ -110,4 +109,13 @@ export const formatTimeAgo = (timestamp: string): string => {
   if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
   return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+};
+
+export const formatDurationMsToHoursAndMinutes = (
+  milliseconds: number
+): string => {
+  const hours = Math.floor(milliseconds / (1000 * 60 * 60));
+  const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 };

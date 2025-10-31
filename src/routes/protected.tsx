@@ -4,7 +4,6 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { ROUTES } from "@/lib/utils";
 
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const Activity = lazy(() => import("@/pages/Activity"));
 const Settings = lazy(() => import("@/pages/Settings"));
 
 export const ProtectedRoutes = () => {
@@ -15,15 +14,6 @@ export const ProtectedRoutes = () => {
       element={
         <ProtectedRoute>
           <Dashboard />
-        </ProtectedRoute>
-      }
-    />,
-    <Route
-      key="activity"
-      path={ROUTES.ACTIVITY}
-      element={
-        <ProtectedRoute>
-          <Activity />
         </ProtectedRoute>
       }
     />,

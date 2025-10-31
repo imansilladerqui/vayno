@@ -2,76 +2,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, ArrowUpRight, CheckCircle2 } from "lucide-react";
+import { useUserManagement } from "@/hooks/useUserManagement";
+import { useNavigate } from "react-router-dom";
 
-interface LatestUsersCardProps {
-  users?: Array<{
-    id: string;
-    full_name?: string;
-    email: string;
-    is_active?: boolean;
-  }>;
-  onViewAll?: () => void;
-  onUserClick?: (userId: string) => void;
-  limit?: number;
-}
-
-export const LatestUsersCard = ({
-  users,
-  onViewAll,
-  onUserClick,
-  limit = 5,
-}: LatestUsersCardProps) => {
-  if (!users || users.length === 0) {
-    return (
-      <Card className="overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
-          <CardTitle className="text-white">Latest Users</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="text-center py-4">
-            <p className="text-muted-foreground">No users found</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Users will appear here once they are registered.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const displayedUsers = users.slice(0, limit);
-
-  const handleUserClick = (userId: string) => {
-    if (onUserClick) {
-      onUserClick(userId);
-    }
-  };
+export const LatestUsersCard = () => {
+  const { displayedUsers } = useUserManagement();
+  const navigate = useNavigate();
 
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
         <div className="flex items-center justify-between">
           <CardTitle className="text-white">Latest Users</CardTitle>
-          {onViewAll && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onViewAll}
-              className="text-white hover:bg-white/10"
-            >
-              View All
-              <ArrowUpRight className="h-4 w-4 ml-1" />
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/users")}
+            className="text-white hover:bg-white/10"
+          >
+            View All
+            <ArrowUpRight className="h-4 w-4 ml-1" />
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="divide-y">
-          {displayedUsers.map((user) => (
+          {displayedUsers?.map((user) => (
             <div
               key={user.id}
               className="p-4 hover:bg-muted/50 transition-colors cursor-pointer group"
-              onClick={() => handleUserClick(user.id)}
+              onClick={() => navigate(`/users/${user.id}/edit`)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

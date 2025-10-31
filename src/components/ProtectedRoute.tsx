@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { RouteLoadingState } from "@/components/RouteLoadingState";
 import { ROUTES } from "@/lib/utils";
 
 interface ProtectedRouteProps {
@@ -14,11 +13,7 @@ const ProtectedRoute = ({
   redirectTo = ROUTES.LOGIN,
 }: ProtectedRouteProps) => {
   const location = useLocation();
-  const { user, isLoading } = useAuthContext();
-
-  if (isLoading) {
-    return <RouteLoadingState />;
-  }
+  const { user } = useAuthContext();
 
   if (!user) {
     return <Navigate to={redirectTo} state={{ from: location }} replace />;

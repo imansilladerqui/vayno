@@ -22,7 +22,6 @@ import { FormActions } from "@/components/forms/FormActions";
 interface UserFormProps {
   form: UseFormReturn<UserFormData>;
   onSubmit: (data: UserFormData) => void;
-  isLoading?: boolean;
   mode?: "create" | "edit";
   onCancel?: () => void;
 }
@@ -30,11 +29,11 @@ interface UserFormProps {
 export const UserForm = ({
   form,
   onSubmit,
-  isLoading = false,
   mode = "create",
   onCancel,
 }: UserFormProps) => {
-  const { businesses, isLoading: isLoadingBusinesses } = useBusinessManagement();
+  const { businesses, isLoading: isLoadingBusinesses } =
+    useBusinessManagement();
 
   return (
     <Form {...form}>
@@ -161,12 +160,7 @@ export const UserForm = ({
             </FormItem>
           )}
         />
-        <FormActions
-          isLoading={isLoading}
-          mode={mode}
-          entityName="User"
-          onCancel={onCancel}
-        />
+        <FormActions mode={mode} entityName="User" onCancel={onCancel} />
       </form>
     </Form>
   );

@@ -16,21 +16,18 @@ export type Profile = Tables<"profiles">;
 export type ParkingLot = Tables<"parking_lots">;
 export type ParkingSpot = Tables<"parking_spots">;
 export type ParkingSession = Tables<"parking_sessions">;
-export type ActivityLog = Tables<"activity_logs">;
 
 // Insert types
 export type ProfileInsert = TablesInsert<"profiles">;
 export type ParkingLotInsert = TablesInsert<"parking_lots">;
 export type ParkingSpotInsert = TablesInsert<"parking_spots">;
 export type ParkingSessionInsert = TablesInsert<"parking_sessions">;
-export type ActivityLogInsert = TablesInsert<"activity_logs">;
 
 // Update types
 export type ProfileUpdate = TablesUpdate<"profiles">;
 export type ParkingLotUpdate = TablesUpdate<"parking_lots">;
 export type ParkingSpotUpdate = TablesUpdate<"parking_spots">;
 export type ParkingSessionUpdate = TablesUpdate<"parking_sessions">;
-export type ActivityLogUpdate = TablesUpdate<"activity_logs">;
 
 // Enum types
 export type UserRole = Enums<"user_role">;
@@ -52,10 +49,6 @@ export type ParkingSessionWithDetails = ParkingSession & {
 
 export type ParkingSpotWithLot = ParkingSpot & {
   parking_lots: ParkingLot;
-};
-
-export type ActivityLogWithProfile = ActivityLog & {
-  profiles?: Profile | null;
 };
 
 export interface ProfileWithBusiness extends Profile {

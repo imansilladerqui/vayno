@@ -59,32 +59,6 @@ export const useParkingLotStats = (lotId?: string) => {
   });
 };
 
-export const useTodayRevenue = () => {
-  return useQuery({
-    queryKey: statisticsQueryKeys.todayRevenue,
-    queryFn: async (): Promise<number> => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const { data, error } = await supabase
-        .from("parking_sessions")
-        .select("total_amount")
-        .gte("check_out_time", today.toISOString())
-        .lt("check_out_time", tomorrow.toISOString())
-        .not("total_amount", "is", null);
-
-      if (error) throw error;
-
-      return (
-        data?.reduce((sum, session) => sum + (session.total_amount || 0), 0) ||
-        0
-      );
-    },
-  });
-};
-
 export const useOccupancyStats = () => {
   return useQuery({
     queryKey: statisticsQueryKeys.occupancyStats,

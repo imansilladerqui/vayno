@@ -8,6 +8,7 @@ const Users = lazy(() => import("@/pages/Users"));
 const CreateUser = lazy(() => import("@/pages/CreateUser"));
 const EditUser = lazy(() => import("@/pages/EditUser"));
 const Businesses = lazy(() => import("@/pages/Businesses"));
+const BusinessDetail = lazy(() => import("@/pages/BusinessDetail"));
 const CreateBusiness = lazy(() => import("@/pages/CreateBusiness"));
 const EditBusiness = lazy(() => import("@/pages/EditBusiness"));
 
@@ -59,6 +60,15 @@ export const FeatureRoutes = () => {
       }
     />,
     <Route
+      key="businesses-detail"
+      path="/business/:id"
+      element={
+        <ProtectedRoute>
+          <BusinessDetail />
+        </ProtectedRoute>
+      }
+    />,
+    <Route
       key="businesses-new"
       path="/businesses/new"
       element={
@@ -69,7 +79,7 @@ export const FeatureRoutes = () => {
     />,
     <Route
       key="businesses-edit"
-      path="/businesses/:id/edit"
+      path="/business/:id/edit"
       element={
         <ProtectedRoute>
           <EditBusiness />

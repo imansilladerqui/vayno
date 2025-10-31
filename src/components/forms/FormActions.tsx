@@ -2,13 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface FormActionsProps {
-  /**
-   * Loading state for the submit button
-   */
-  isLoading?: boolean;
   /**
    * Form mode - determines button text
    */
@@ -37,7 +32,6 @@ interface FormActionsProps {
  * Handles loading states, navigation, and consistent styling
  */
 export const FormActions = ({
-  isLoading = false,
   mode = "create",
   entityName,
   onCancel,
@@ -70,8 +64,7 @@ export const FormActions = ({
       <Button type="button" variant="outline" onClick={handleCancel}>
         Cancel
       </Button>
-      <Button type="submit" disabled={disabled || isLoading}>
-        {isLoading && <LoadingSpinner size="sm" className="mr-2" />}
+      <Button type="submit" disabled={disabled}>
         <Save className="mr-2 h-4 w-4" />
         {submitText || defaultSubmitText}
       </Button>
