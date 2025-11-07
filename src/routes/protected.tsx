@@ -4,7 +4,6 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { ROUTES } from "@/lib/utils";
 
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const Settings = lazy(() => import("@/pages/Settings"));
 
 export const ProtectedRoutes = () => {
   return [
@@ -14,15 +13,6 @@ export const ProtectedRoutes = () => {
       element={
         <ProtectedRoute>
           <Dashboard />
-        </ProtectedRoute>
-      }
-    />,
-    <Route
-      key="settings"
-      path={ROUTES.SETTINGS}
-      element={
-        <ProtectedRoute>
-          <Settings />
         </ProtectedRoute>
       }
     />,

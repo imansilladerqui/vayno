@@ -33,11 +33,8 @@ Thumbs.db
 # Logs
 *.log
 
-# Supabase specific (if using local development)
+supabase/
 .supabase/
-supabase/.branches/
-supabase/.temp/
-supabase/config.toml
 
 # Generated files
 *.generated.*
@@ -45,8 +42,6 @@ supabase/config.toml
 # Database dumps (if you create them)
 *.sql.dump
 *.backup
-supabase/database-schema.sql
-supabase/seed-data.sql
 
 # TypeScript
 *.tsbuildinfo

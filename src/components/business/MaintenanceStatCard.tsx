@@ -1,12 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ParkingCircle } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { useParkingManagement } from "@/hooks/useParkingManagement";
+import { useParkingGridManagement } from "@/hooks/useParkingGridManagement";
 
 export const MaintenanceStatCard = () => {
-  const { id } = useParams<{ id?: string }>();
-  const { maintenanceSpots, totalSpots } = useParkingManagement(id);
-  
+  const { id } = useParams<{ id: string }>();
+  const { maintenanceSpots, totalSpots } = useParkingGridManagement(id!);
+
   const value = maintenanceSpots || 0;
   const total = totalSpots || 0;
   const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
@@ -30,4 +30,3 @@ export const MaintenanceStatCard = () => {
     </Card>
   );
 };
-

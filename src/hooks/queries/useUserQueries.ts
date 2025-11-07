@@ -68,7 +68,6 @@ export const useCreateUser = () => {
         );
       }
 
-      // Generate secure password if needed
       const generateSecurePassword = (): string => {
         const charset =
           "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
@@ -98,19 +97,28 @@ export const useCreateUser = () => {
       if (authError) throw authError;
 
       if (authData.user) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .insert({
-            id: authData.user.id,
-            email: data.email,
-            full_name: data.full_name,
-            role: data.role,
-            phone: data.phone,
-          })
-          .select()
-          .single();
+        let profile;
 
-        if (profileError) throw profileError;
+        if (data.phone) {
+          const { data: updatedProfile, error: updateError } = await supabase
+            .from("profiles")
+            .update({ phone: data.phone })
+            .eq("id", authData.user.id)
+            .select()
+            .single();
+
+          if (updateError) throw updateError;
+          profile = updatedProfile;
+        } else {
+          const { data: fetchedProfile, error: fetchError } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", authData.user.id)
+            .single();
+
+          if (fetchError) throw fetchError;
+          profile = fetchedProfile;
+        }
 
         if (data.sendPasswordEmail && data.email) {
           // TODO: Implement email sending

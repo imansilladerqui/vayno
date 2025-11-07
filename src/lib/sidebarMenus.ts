@@ -1,11 +1,4 @@
-import {
-  LayoutDashboard,
-  Car,
-  Settings,
-  Users,
-  Building2,
-  Cog,
-} from "lucide-react";
+import { LayoutDashboard, Users, Building2, Cog } from "lucide-react";
 
 export interface MenuItem {
   title: string;
@@ -15,8 +8,6 @@ export interface MenuItem {
 
 export const USER_MENU_ITEMS: MenuItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Parking Spots", url: "/parking", icon: Car },
-  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export const ADMIN_MENU_ITEMS: MenuItem[] = [

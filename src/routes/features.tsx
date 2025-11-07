@@ -3,8 +3,8 @@ import { lazy } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ROUTES } from "@/lib/utils";
 
-const Parking = lazy(() => import("@/pages/Parking"));
 const Users = lazy(() => import("@/pages/Users"));
+const UserDetail = lazy(() => import("@/pages/UserDetail"));
 const CreateUser = lazy(() => import("@/pages/CreateUser"));
 const EditUser = lazy(() => import("@/pages/EditUser"));
 const Businesses = lazy(() => import("@/pages/Businesses"));
@@ -14,15 +14,6 @@ const EditBusiness = lazy(() => import("@/pages/EditBusiness"));
 
 export const FeatureRoutes = () => {
   return [
-    <Route
-      key="parking"
-      path={ROUTES.PARKING}
-      element={
-        <ProtectedRoute>
-          <Parking />
-        </ProtectedRoute>
-      }
-    />,
     <Route
       key="users"
       path={ROUTES.USERS}
@@ -34,7 +25,7 @@ export const FeatureRoutes = () => {
     />,
     <Route
       key="users-new"
-      path="/users/new"
+      path={ROUTES.USER_NEW}
       element={
         <ProtectedRoute>
           <CreateUser />
@@ -43,10 +34,19 @@ export const FeatureRoutes = () => {
     />,
     <Route
       key="users-edit"
-      path="/users/:id/edit"
+      path={ROUTES.USER_EDIT}
       element={
         <ProtectedRoute>
           <EditUser />
+        </ProtectedRoute>
+      }
+    />,
+    <Route
+      key="user-detail"
+      path={ROUTES.USER_DETAIL}
+      element={
+        <ProtectedRoute>
+          <UserDetail />
         </ProtectedRoute>
       }
     />,
@@ -61,7 +61,7 @@ export const FeatureRoutes = () => {
     />,
     <Route
       key="businesses-detail"
-      path="/business/:id"
+      path={ROUTES.BUSINESS_DETAIL}
       element={
         <ProtectedRoute>
           <BusinessDetail />
@@ -70,7 +70,7 @@ export const FeatureRoutes = () => {
     />,
     <Route
       key="businesses-new"
-      path="/businesses/new"
+      path={ROUTES.BUSINESS_NEW}
       element={
         <ProtectedRoute>
           <CreateBusiness />
@@ -79,7 +79,7 @@ export const FeatureRoutes = () => {
     />,
     <Route
       key="businesses-edit"
-      path="/business/:id/edit"
+      path={ROUTES.BUSINESS_EDIT}
       element={
         <ProtectedRoute>
           <EditBusiness />

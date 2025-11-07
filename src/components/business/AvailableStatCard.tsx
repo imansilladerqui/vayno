@@ -1,11 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ParkingCircle } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { useParkingManagement } from "@/hooks/useParkingManagement";
+import { useParkingGridManagement } from "@/hooks/useParkingGridManagement";
 
 export const AvailableStatCard = () => {
-  const { id } = useParams<{ id?: string }>();
-  const { availableSpots, totalSpots } = useParkingManagement(id);
+  const { id } = useParams<{ id: string }>();
+  const { availableSpots, totalSpots } = useParkingGridManagement(id!);
 
   const value = availableSpots || 0;
   const total = totalSpots || 0;

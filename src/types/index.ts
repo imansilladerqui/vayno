@@ -1,7 +1,5 @@
-// src/types/index.ts
 import type { Database } from "@/integrations/supabase/types";
 
-// Re-export database types for convenience
 export type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];
 export type TablesInsert<T extends keyof Database["public"]["Tables"]> =
@@ -11,44 +9,56 @@ export type TablesUpdate<T extends keyof Database["public"]["Tables"]> =
 export type Enums<T extends keyof Database["public"]["Enums"]> =
   Database["public"]["Enums"][T];
 
-// Specific table types
 export type Profile = Tables<"profiles">;
-export type ParkingLot = Tables<"parking_lots">;
+export type Business = Tables<"businesses">;
 export type ParkingSpot = Tables<"parking_spots">;
 export type ParkingSession = Tables<"parking_sessions">;
+export type Payment = Tables<"payments">;
+export type Reservation = Tables<"reservations">;
+export type ActivityLog = Tables<"activity_logs">;
+export type Notification = Tables<"notifications">;
 
-// Insert types
 export type ProfileInsert = TablesInsert<"profiles">;
-export type ParkingLotInsert = TablesInsert<"parking_lots">;
+export type BusinessInsert = TablesInsert<"businesses">;
 export type ParkingSpotInsert = TablesInsert<"parking_spots">;
 export type ParkingSessionInsert = TablesInsert<"parking_sessions">;
+export type PaymentInsert = TablesInsert<"payments">;
+export type ReservationInsert = TablesInsert<"reservations">;
+export type ActivityLogInsert = TablesInsert<"activity_logs">;
+export type NotificationInsert = TablesInsert<"notifications">;
 
-// Update types
 export type ProfileUpdate = TablesUpdate<"profiles">;
-export type ParkingLotUpdate = TablesUpdate<"parking_lots">;
-export type ParkingSpotUpdate = TablesUpdate<"parking_spots">;
+export type BusinessUpdate = TablesUpdate<"businesses">;
 export type ParkingSessionUpdate = TablesUpdate<"parking_sessions">;
+export type PaymentUpdate = TablesUpdate<"payments">;
+export type ReservationUpdate = TablesUpdate<"reservations">;
+export type ActivityLogUpdate = TablesUpdate<"activity_logs">;
+export type NotificationUpdate = TablesUpdate<"notifications">;
 
-// Enum types
 export type UserRole = Enums<"user_role">;
 export type ParkingStatus = Enums<"parking_status">;
+export type PaymentStatus = Enums<"payment_status">;
 export type VehicleType = Enums<"vehicle_type">;
 
-// View types
-export type ActiveSession =
-  Database["public"]["Views"]["active_sessions"]["Row"];
-export type ParkingLotStats =
-  Database["public"]["Views"]["parking_lot_stats"]["Row"];
+export type ActiveSession = Database["public"]["Views"] extends {
+  active_sessions: { Row: infer T };
+}
+  ? T
+  : never;
 
 export type ParkingSessionWithDetails = ParkingSession & {
   parking_spots: ParkingSpot & {
-    parking_lots: ParkingLot;
+    businesses: Business;
   };
   profiles?: Profile | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  customer_email?: string | null;
 };
 
-export type ParkingSpotWithLot = ParkingSpot & {
-  parking_lots: ParkingLot;
+export type ParkingSpotWithBusiness = ParkingSpot & {
+  businesses: Business;
+  reservations?: Reservation[] | null;
 };
 
 export interface ProfileWithBusiness extends Profile {
@@ -58,7 +68,6 @@ export interface ProfileWithBusiness extends Profile {
   } | null;
 }
 
-// Form types
 export interface SignUpFormData {
   email: string;
   password: string;
@@ -78,26 +87,24 @@ export interface ProfileFormData {
   date_of_birth?: string;
 }
 
-export interface ParkingLotFormData {
+export interface BusinessFormData {
   name: string;
   description?: string;
-  address: string;
+  owner_id?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  address?: string;
   city?: string;
   state?: string;
   zip_code?: string;
   country?: string;
-  latitude?: number;
-  longitude?: number;
-  total_spots: number;
-  hourly_rate: number;
-  daily_rate: number;
-  monthly_rate: number;
-  operating_hours?: Record<string, string>;
-  amenities?: string[];
+  tax_id?: string;
+  business_type?: string;
+  is_active?: boolean;
 }
 
 export interface ParkingSpotFormData {
-  lot_id: string;
+  business_id: string;
   spot_number: string;
   spot_type?: VehicleType;
   status?: ParkingStatus;
@@ -106,6 +113,19 @@ export interface ParkingSpotFormData {
   is_electric_charging?: boolean;
   width?: number;
   length?: number;
+  hourly_rate?: number;
+  daily_rate?: number;
+  monthly_rate?: number;
+}
+
+export interface VehicleCheckInFormData {
+  vehiclePlate: string;
+  vehicleType: VehicleType;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  startDate?: string;
+  startTime?: string;
 }
 
 export interface ParkingSessionFormData {
@@ -116,7 +136,6 @@ export interface ParkingSessionFormData {
   notes?: string;
 }
 
-// API Response types
 export interface ApiResponse<T> {
   data: T | null;
   error: Error | null;
@@ -131,12 +150,10 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// Utility types
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
 export type PartialExcept<T, K extends keyof T> = Partial<T> & Pick<T, K>;
 
-// Component prop types
 export interface BaseComponentProps {
   className?: string;
   children?: React.ReactNode;
@@ -154,7 +171,6 @@ export interface PaginationProps {
   itemsPerPage?: number;
 }
 
-// Hook return types
 export interface UseQueryResult<T> {
   data: T | undefined;
   isLoading: boolean;
@@ -172,3 +188,32 @@ export interface UseMutationResult<T, V> {
   error: Error | null;
   reset: () => void;
 }
+
+export interface ParkingSpotData {
+  spot_id: string;
+  parking_spots: {
+    id: string;
+    spot_number: string;
+    hourly_rate?: number;
+  };
+}
+
+export interface SpotDetailsDrawerData {
+  spot: ParkingSpotWithBusiness;
+  currentCost?: {
+    total: number;
+    duration: string;
+  } | null;
+}
+
+export interface CustomerInfo {
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+}
+
+export type CustomerInfoInput = {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+};

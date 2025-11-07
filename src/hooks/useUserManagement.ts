@@ -61,7 +61,6 @@ export const useUserManagement = () => {
     editUser,
     deleteUser,
     updateUser,
-    isUpdating: updateUserMutation.isPending,
     totalUsers,
     activeUsers,
     displayedUsers,
