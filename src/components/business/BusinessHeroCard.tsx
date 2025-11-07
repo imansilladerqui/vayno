@@ -3,12 +3,12 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, MapPin, TrendingUp } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useBusiness } from "@/hooks/queries/useBusinessQueries";
-import { useParkingManagement } from "@/hooks/useParkingManagement";
+import { useParkingGridManagement } from "@/hooks/useParkingGridManagement";
 
 export const BusinessHeroCard = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: business } = useBusiness(id || "");
-  const { totalSpots, rate } = useParkingManagement(id);
+  const { data: business } = useBusiness(id!);
+  const { totalSpots, rate } = useParkingGridManagement(id!);
 
   if (!business) return null;
 
@@ -62,4 +62,3 @@ export const BusinessHeroCard = () => {
     </Card>
   );
 };
-

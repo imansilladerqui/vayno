@@ -25,38 +25,21 @@ export const getErrorMessage = (
 };
 
 /**
- * Common error handling wrapper for async operations
- * @param operation - The async operation to execute
- * @param onError - Optional callback for error handling
- * @returns The result of the operation or undefined if error
- */
-export const handleAsync = async <T>(
-  operation: () => Promise<T>,
-  onError?: (error: unknown) => void
-): Promise<T | undefined> => {
-  try {
-    return await operation();
-  } catch (error) {
-    if (onError) {
-      onError(error);
-    }
-    return undefined;
-  }
-};
-
-/**
  * Common routes used throughout the application
  */
 export const ROUTES = {
   HOME: "/",
   LOGIN: "/login",
   DASHBOARD: "/dashboard",
-  PARKING: "/parking",
-  SETTINGS: "/settings",
   SIGNUP: "/signup",
   USERS: "/users",
-  EDIT_USER: "/users/:id/edit",
+  USER_NEW: "/users/new",
+  USER_DETAIL: "/users/:id",
+  USER_EDIT: "/users/:id/edit",
   BUSINESSES: "/businesses",
+  BUSINESS_NEW: "/businesses/new",
+  BUSINESS_DETAIL: "/business/:id",
+  BUSINESS_EDIT: "/business/:id/edit",
 } as const;
 
 /**
@@ -68,7 +51,15 @@ export const USER_ROLES = {
   SUPERADMIN: "superadmin",
 } as const;
 
-export type UserRoleType = (typeof USER_ROLES)[keyof typeof USER_ROLES];
+/**
+ * Parking status constants
+ */
+export const PARKING_STATUS = {
+  AVAILABLE: "available",
+  OCCUPIED: "occupied",
+  RESERVED: "reserved",
+  MAINTENANCE: "maintenance",
+} as const;
 
 /**
  * Delay helper for timed operations
@@ -92,25 +83,6 @@ export const getInitials = (name: string): string => {
     .slice(0, 2);
 };
 
-/**
- * Format a timestamp as a relative time string (e.g., "5 mins ago", "2 hours ago")
- * @param timestamp - ISO timestamp string
- * @returns Human-readable relative time string
- */
-export const formatTimeAgo = (timestamp: string): string => {
-  const now = new Date();
-  const time = new Date(timestamp);
-  const diffMs = now.getTime() - time.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? "s" : ""} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-  return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
-};
-
 export const formatDurationMsToHoursAndMinutes = (
   milliseconds: number
 ): string => {
@@ -118,4 +90,156 @@ export const formatDurationMsToHoursAndMinutes = (
   const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
+};
+
+/**
+ * Format the elapsed time since a check-in timestamp.
+ * @param date - The original check-in time.
+ * @returns Formatted string like "2d 5h", "3h 15m", or "45m".
+ */
+export const formatTimeDifference = (date: Date): string => {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+
+  if (diffMs <= 0) return "Now";
+
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays > 0) {
+    return `${diffDays}d ${diffHours % 24}h`;
+  }
+  if (diffHours > 0) {
+    return `${diffHours}h ${diffMins % 60}m`;
+  }
+  return `${diffMins}m`;
+};
+
+/**
+ * Format the time until a target date.
+ * @param target - The target date.
+ * @param prefix - Optional label prefix (defaults to "Ends in").
+ * @returns Formatted string like "2d 5h", "3h 15m", or "45m".
+ */
+export const formatTimeUntil = (
+  target: Date,
+  prefix: string = "Ends in"
+): string | null => {
+  const now = new Date();
+  const diffMs = target.getTime() - now.getTime();
+
+  if (diffMs <= 0) return "Ended";
+
+  // Treat far-future placeholders (e.g., open-ended reservations) as no countdown
+  const yearsAhead = diffMs / (1000 * 60 * 60 * 24 * 365);
+  if (yearsAhead >= 50) return null;
+
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays > 0) {
+    return `${prefix} ${diffDays}d ${diffHours % 24}h`;
+  }
+  if (diffHours > 0) {
+    return `${prefix} ${diffHours}h ${diffMins % 60}m`;
+  }
+  return `${prefix} ${diffMins}m`;
+};
+
+export const parseCustomerInfoFromNotes = (
+  session: { notes?: string | null } & {
+    customer_name?: string | null;
+    customer_phone?: string | null;
+    customer_email?: string | null;
+  }
+): void => {
+  if (session.notes) {
+    try {
+      const notesStr = String(session.notes).trim();
+      if (notesStr.startsWith("{") && notesStr.endsWith("}")) {
+        const customerData = JSON.parse(notesStr);
+        if (
+          customerData.customer_name &&
+          typeof customerData.customer_name === "string" &&
+          customerData.customer_name.trim()
+        ) {
+          session.customer_name = customerData.customer_name.trim();
+        }
+        if (
+          customerData.customer_phone &&
+          typeof customerData.customer_phone === "string" &&
+          customerData.customer_phone.trim()
+        ) {
+          session.customer_phone = customerData.customer_phone.trim();
+        }
+        if (
+          customerData.customer_email &&
+          typeof customerData.customer_email === "string" &&
+          customerData.customer_email.trim()
+        ) {
+          session.customer_email = customerData.customer_email.trim();
+        }
+      }
+    } catch {
+      // Ignore parsing errors - notes might contain other data
+    }
+  }
+};
+
+export const DATE_FORMAT = "MMM dd, yyyy HH:mm";
+
+export const normalizeVehiclePlate = (plate: string): string => {
+  return plate.trim().toUpperCase();
+};
+
+export const normalizeCustomerInfo = (info: {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+}): {
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+} => {
+  return {
+    customer_name: info.name?.trim() || null,
+    customer_email: info.email?.trim() || null,
+    customer_phone: info.phone?.trim() || null,
+  };
+};
+
+export const hasCustomerInfo = (info: {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+}): boolean => {
+  return !!(
+    (info.name && info.name.trim()) ||
+    (info.email && info.email.trim()) ||
+    (info.phone && info.phone.trim())
+  );
+};
+
+export const createCustomerInfoJson = (info: {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+}): string | null => {
+  if (!hasCustomerInfo(info)) return null;
+  return JSON.stringify(normalizeCustomerInfo(info));
+};
+
+export const getSpotHourlyRate = (spot: Record<string, unknown>): number => {
+  return (typeof spot?.hourly_rate === "number" ? spot.hourly_rate : null) ?? 0;
+};
+
+export const createFarFutureDate = (
+  fromDate: Date = new Date(),
+  years: number = 100
+): Date => {
+  const future = new Date(fromDate);
+  future.setFullYear(future.getFullYear() + years);
+  return future;
 };

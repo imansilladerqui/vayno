@@ -4,12 +4,9 @@ import type { Business } from "@/hooks/queries/useBusinessQueries";
 
 interface UseDialogReturn {
   open: boolean;
-  message: string;
-  setMessage: (msg: string) => void;
   setOpen: (open: boolean) => void;
   show: () => void;
   hide: () => void;
-  toggle: () => void;
 }
 
 interface DeleteUserDialogType extends UseDialogReturn {

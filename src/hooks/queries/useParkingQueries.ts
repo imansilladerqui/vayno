@@ -2,32 +2,31 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   ParkingSpot,
-  ParkingSpotUpdate,
   ParkingSessionWithDetails,
-  ParkingSpotWithLot,
+  ParkingSpotWithBusiness,
 } from "@/types";
 import { useCrudMutationConfig, EntityNames } from "@/lib/mutationHelpers";
+import {
+  parseCustomerInfoFromNotes,
+  normalizeVehiclePlate,
+  createCustomerInfoJson,
+  PARKING_STATUS,
+} from "@/lib/utils";
+import {
+  PARKING_SESSION_SELECT,
+  PARKING_SESSION_SELECT_WITHOUT_PROFILES,
+} from "@/lib/supabaseQueries";
 
-export const useParkingSpots = (businessId?: string) => {
+export const useParkingSpotsQuery = (businessId?: string) => {
   return useQuery({
     queryKey: ["parking-spots", businessId],
-    queryFn: async (): Promise<ParkingSpotWithLot[]> => {
+    queryFn: async (): Promise<ParkingSpotWithBusiness[]> => {
       let query = supabase
         .from("parking_spots")
-        .select("*, parking_lots!inner(*)");
+        .select("*, businesses!inner(*)");
 
       if (businessId) {
-        const { data: lots } = await supabase
-          .from("parking_lots")
-          .select("id")
-          .eq("business_id", businessId);
-
-        if (!lots?.length) return [];
-
-        query = query.in(
-          "lot_id",
-          lots.map((lot) => lot.id)
-        );
+        query = query.eq("business_id", businessId);
       }
 
       const { data, error } = await query.order("spot_number", {
@@ -35,56 +34,30 @@ export const useParkingSpots = (businessId?: string) => {
       });
 
       if (error) throw error;
-      return data || [];
+      return (data ?? []) as unknown as ParkingSpotWithBusiness[];
     },
   });
 };
 
-export const useUpdateParkingSpot = () => {
-  return useMutation({
-    mutationFn: async ({
-      id,
-      updates,
-    }: {
-      id: string;
-      updates: Partial<ParkingSpotUpdate>;
-    }): Promise<ParkingSpot> => {
-      const { data, error } = await supabase
-        .from("parking_spots")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    ...useCrudMutationConfig<
-      ParkingSpot,
-      Error,
-      { id: string; updates: Partial<ParkingSpotUpdate> }
-    >({
-      invalidateKeys: [["parking-spots"], ["occupancy-stats"]],
-      entityName: EntityNames.ParkingSpot,
-      action: "update",
-    }),
-  });
-};
-
-export const useCheckInVehicle = () => {
+export const useCheckInVehicleQuery = () => {
   return useMutation({
     mutationFn: async ({
       spotId,
       vehiclePlate,
       userId,
       vehicleType = "car",
+      customerName,
+      customerPhone,
+      customerEmail,
     }: {
       spotId: string;
       vehiclePlate: string;
       userId?: string;
       vehicleType?: "car" | "motorcycle" | "truck" | "van" | "other";
+      customerName?: string;
+      customerPhone?: string;
+      customerEmail?: string;
     }): Promise<ParkingSessionWithDetails> => {
-      // Get current authenticated user
       const {
         data: { user: authUser },
         error: authError,
@@ -94,7 +67,6 @@ export const useCheckInVehicle = () => {
         throw new Error("Authentication required to check in a vehicle");
       }
 
-      // Get user profile to check role and business association
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("id, role, business_id")
@@ -115,10 +87,37 @@ export const useCheckInVehicle = () => {
         throw new Error("Parking spot not found");
       }
 
-      if (spot.status !== "available") {
+      const typedSpot = spot as ParkingSpot & {
+        business_id?: string | null;
+        hourly_rate?: number | null;
+        daily_rate?: number | null;
+        monthly_rate?: number | null;
+      };
+
+      if (
+        typedSpot.status !== PARKING_STATUS.AVAILABLE &&
+        typedSpot.status !== PARKING_STATUS.RESERVED
+      ) {
         throw new Error(
-          `Spot ${spot.spot_number} is not available (Status: ${spot.status})`
+          `Spot ${typedSpot.spot_number} is not available (Status: ${typedSpot.status})`
         );
+      }
+
+      if (typedSpot.status === PARKING_STATUS.RESERVED) {
+        const { data: activeReservation } = await supabase
+          .from("reservations")
+          .select("id")
+          .eq("spot_id", spotId)
+          .neq("status", "cancelled")
+          .gte("end_time", new Date().toISOString())
+          .maybeSingle();
+
+        if (activeReservation) {
+          await supabase
+            .from("reservations")
+            .update({ status: "cancelled" })
+            .eq("id", activeReservation.id);
+        }
       }
 
       const { data: existingSession } = await supabase
@@ -136,26 +135,27 @@ export const useCheckInVehicle = () => {
         throw new Error("Valid license plate is required");
       }
 
-      if (!spot.lot_id) {
-        throw new Error("Parking spot has no associated lot");
+      if (!typedSpot.business_id) {
+        throw new Error("Parking spot has no associated business");
       }
 
-      const { data: lot, error: lotError } = await supabase
-        .from("parking_lots")
+      const { data: business, error: businessError } = await supabase
+        .from("businesses")
         .select("*")
-        .eq("id", spot.lot_id)
+        .eq("id", typedSpot.business_id)
         .single();
 
-      if (lotError || !lot) {
-        throw new Error("Parking lot not found");
+      if (businessError || !business) {
+        throw new Error("Business not found");
       }
 
-      // Check if user has permission (admin/superadmin can check in for any user)
-      // Regular users can only check in for themselves or if no userId is provided
+      const hourlyRate = typedSpot.hourly_rate || 0;
+      const dailyRate = typedSpot.daily_rate || 0;
+      const monthlyRate = typedSpot.monthly_rate || 0;
+
       const isAdmin = profile.role === "admin" || profile.role === "superadmin";
       const sessionUserId = userId || authUser.id;
 
-      // If userId is provided but user is not admin, verify it matches their own ID
       if (userId && userId !== authUser.id && !isAdmin) {
         throw new Error("You can only check in vehicles for yourself");
       }
@@ -163,38 +163,35 @@ export const useCheckInVehicle = () => {
       try {
         const { error: spotUpdateError } = await supabase
           .from("parking_spots")
-          .update({ status: "occupied" })
+          .update({ status: PARKING_STATUS.OCCUPIED })
           .eq("id", spotId);
 
         if (spotUpdateError) throw spotUpdateError;
+
+        const customerInfo = createCustomerInfoJson({
+          name: customerName,
+          email: customerEmail,
+          phone: customerPhone,
+        });
 
         const { data: session, error: sessionError } = await supabase
           .from("parking_sessions")
           .insert({
             spot_id: spotId,
             user_id: sessionUserId,
-            vehicle_plate: vehiclePlate.trim().toUpperCase(),
+            vehicle_plate: normalizeVehiclePlate(vehiclePlate),
             vehicle_type: vehicleType,
             check_in_time: new Date().toISOString(),
-            hourly_rate: lot.hourly_rate,
-            daily_rate: lot.daily_rate,
-            monthly_rate: lot.monthly_rate,
+            hourly_rate: hourlyRate,
+            daily_rate: dailyRate,
+            monthly_rate: monthlyRate,
             payment_status: "pending",
+            notes: customerInfo,
           })
-          .select(
-            `
-            *,
-            parking_spots!inner(
-              *,
-              parking_lots!inner(*)
-            ),
-            profiles(*)
-          `
-          )
+          .select(PARKING_SESSION_SELECT)
           .single();
 
         if (sessionError) {
-          // Provide more helpful error messages based on RLS policy violations
           if (sessionError.message?.includes("row-level security")) {
             throw new Error(
               `Permission denied: ${
@@ -207,12 +204,15 @@ export const useCheckInVehicle = () => {
           throw sessionError;
         }
 
-        return session;
+        const sessionWithCustomer =
+          session as unknown as ParkingSessionWithDetails;
+        parseCustomerInfoFromNotes(sessionWithCustomer);
+
+        return sessionWithCustomer;
       } catch (error) {
-        // Rollback: Mark spot as available if session creation failed
         await supabase
           .from("parking_spots")
-          .update({ status: "available" })
+          .update({ status: PARKING_STATUS.AVAILABLE })
           .eq("id", spotId);
 
         throw error;
@@ -226,6 +226,9 @@ export const useCheckInVehicle = () => {
         vehiclePlate: string;
         userId?: string;
         vehicleType?: "car" | "motorcycle" | "truck" | "van" | "other";
+        customerName?: string;
+        customerPhone?: string;
+        customerEmail?: string;
       }
     >({
       invalidateKeys: [
@@ -233,6 +236,7 @@ export const useCheckInVehicle = () => {
         ["active-sessions"],
         ["parking-spots"],
         ["occupancy-stats"],
+        ["reservations"],
       ],
       entityName: EntityNames.Vehicle,
       action: "check in",
@@ -240,7 +244,7 @@ export const useCheckInVehicle = () => {
   });
 };
 
-export const useCheckOutVehicle = () => {
+export const useCheckOutVehicleQuery = () => {
   return useMutation({
     mutationFn: async ({
       sessionId,
@@ -251,16 +255,7 @@ export const useCheckOutVehicle = () => {
     }): Promise<ParkingSessionWithDetails> => {
       const { data: session, error: sessionError } = await supabase
         .from("parking_sessions")
-        .select(
-          `
-          *,
-          parking_spots!inner(
-            *,
-            parking_lots!inner(*)
-          ),
-          profiles(*)
-        `
-        )
+        .select(PARKING_SESSION_SELECT)
         .eq("id", sessionId)
         .single();
 
@@ -282,13 +277,19 @@ export const useCheckOutVehicle = () => {
       const durationHours = durationMs / (1000 * 60 * 60);
       const durationDays = durationMs / (1000 * 60 * 60 * 24);
 
-      const lot = session.parking_spots.parking_lots;
+      const spot = session.parking_spots as ParkingSpot & {
+        hourly_rate?: number | null;
+        daily_rate?: number | null;
+        monthly_rate?: number | null;
+      };
+      const dailyRate = spot.daily_rate || 0;
+      const hourlyRate = spot.hourly_rate || 0;
       let totalAmount = 0;
 
       if (durationDays >= 1) {
-        totalAmount = Math.ceil(durationDays) * lot.daily_rate;
+        totalAmount = Math.ceil(durationDays) * dailyRate;
       } else {
-        totalAmount = Math.max(1, Math.ceil(durationHours)) * lot.hourly_rate;
+        totalAmount = Math.max(1, Math.ceil(durationHours)) * hourlyRate;
       }
 
       const { data: updatedSession, error: updateError } = await supabase
@@ -299,28 +300,23 @@ export const useCheckOutVehicle = () => {
           payment_status: "completed",
         })
         .eq("id", sessionId)
-        .select(
-          `
-            *,
-            parking_spots!inner(
-              *,
-              parking_lots!inner(*)
-            ),
-            profiles(*)
-          `
-        )
+        .select(PARKING_SESSION_SELECT)
         .single();
 
       if (updateError) throw updateError;
+      if (!updatedSession) throw new Error("Failed to update session");
 
-      if (!session.spot_id) {
+      const typedSession =
+        updatedSession as unknown as ParkingSessionWithDetails;
+
+      if (!typedSession.spot_id) {
         throw new Error("Session missing spot ID");
       }
 
       const { error: spotUpdateError } = await supabase
         .from("parking_spots")
-        .update({ status: "available" })
-        .eq("id", session.spot_id);
+        .update({ status: PARKING_STATUS.AVAILABLE })
+        .eq("id", typedSession.spot_id);
 
       if (spotUpdateError) throw spotUpdateError;
 
@@ -334,7 +330,9 @@ export const useCheckOutVehicle = () => {
 
       if (paymentError) throw paymentError;
 
-      return updatedSession;
+      parseCustomerInfoFromNotes(typedSession);
+
+      return typedSession;
     },
     ...useCrudMutationConfig<
       ParkingSessionWithDetails,
@@ -354,20 +352,38 @@ export const useCheckOutVehicle = () => {
   });
 };
 
-export const useCalculateCurrentCost = () => {
+export const useParkingSessionQuery = (spotId?: string) => {
+  return useQuery({
+    queryKey: ["parking-sessions", "active", spotId],
+    queryFn: async (): Promise<ParkingSessionWithDetails | null> => {
+      if (!spotId) return null;
+
+      const { data, error } = await supabase
+        .from("parking_sessions")
+        .select(PARKING_SESSION_SELECT)
+        .eq("spot_id", spotId)
+        .is("check_out_time", null)
+        .order("check_in_time", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return null;
+
+      const session = data as unknown as ParkingSessionWithDetails;
+      parseCustomerInfoFromNotes(session);
+      return session;
+    },
+    enabled: !!spotId,
+  });
+};
+
+export const useCalculateCurrentCostQuery = () => {
   return useMutation({
     mutationFn: async (sessionId: string) => {
       const { data: session, error } = await supabase
         .from("parking_sessions")
-        .select(
-          `
-          *,
-          parking_spots!inner(
-            *,
-            parking_lots!inner(*)
-          )
-        `
-        )
+        .select(PARKING_SESSION_SELECT_WITHOUT_PROFILES)
         .eq("id", sessionId)
         .single();
 
@@ -385,20 +401,26 @@ export const useCalculateCurrentCost = () => {
       const durationHours = durationMs / (1000 * 60 * 60);
       const durationDays = durationMs / (1000 * 60 * 60 * 24);
 
-      const lot = session.parking_spots.parking_lots;
+      const spot = session.parking_spots as ParkingSpot & {
+        hourly_rate?: number | null;
+        daily_rate?: number | null;
+        monthly_rate?: number | null;
+      };
+      const dailyRate = spot.daily_rate || 0;
+      const hourlyRate = spot.hourly_rate || 0;
       let currentCost = 0;
 
       if (durationDays >= 1) {
-        currentCost = Math.ceil(durationDays) * lot.daily_rate;
+        currentCost = Math.ceil(durationDays) * dailyRate;
       } else {
-        currentCost = Math.max(1, Math.ceil(durationHours)) * lot.hourly_rate;
+        currentCost = Math.max(1, Math.ceil(durationHours)) * hourlyRate;
       }
 
       return {
         currentCost,
         durationMs,
-        hourlyRate: lot.hourly_rate,
-        dailyRate: lot.daily_rate,
+        hourlyRate,
+        dailyRate,
       };
     },
   });

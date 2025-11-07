@@ -91,7 +91,7 @@ export const useBusinessManagement = () => {
 
   const totalBusinesses = data?.length;
   const activeBusinesses = data?.filter((b) => b.is_active).length;
-  const displayedBusinesses = data?.slice(0, 5);
+  const TopBusinessCardItems = data?.slice(0, 5);
 
   return {
     businesses: data,
@@ -104,10 +104,12 @@ export const useBusinessManagement = () => {
     createBusiness,
     confirmDeleteBusiness,
 
+    isCreating: createBusinessMutation.isPending,
     isUpdating: updateBusinessMutation.isPending,
     isDeleting: deleteBusinessMutation.isPending,
+
     totalBusinesses,
     activeBusinesses,
-    displayedBusinesses,
+    TopBusinessCardItems,
   };
 };

@@ -5,9 +5,6 @@ import {
   useSignUp as useSignUpQuery,
   useSignIn as useSignInQuery,
   useSignOut as useSignOutQuery,
-  useUpdateProfile as useUpdateProfileQuery,
-  useChangePassword as useChangePasswordQuery,
-  useResetPassword as useResetPasswordQuery,
 } from "@/hooks/queries/useAuthQueries";
 
 export const useSignUp = () => {
@@ -178,104 +175,5 @@ export const useSignOut = () => {
     signOut,
     mutate: signOutMutation.mutate,
     mutateAsync: signOutMutation.mutateAsync,
-  };
-};
-
-export const useUpdateProfile = () => {
-  const updateProfileMutation = useUpdateProfileQuery();
-
-  const updateProfile = (
-    variables: {
-      userId: string;
-      updates: Record<string, unknown>;
-    },
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    updateProfileMutation.mutate(variables, {
-      onSuccess: () => {
-        toast.success("Profile Updated", {
-          description: "Your profile has been updated successfully.",
-        });
-        options?.onSuccess?.();
-      },
-      onError: (error: Error) => {
-        toast.error("Update Failed", {
-          description:
-            error.message || "Unable to update profile. Please try again.",
-        });
-        options?.onError?.(error);
-      },
-    });
-  };
-
-  return {
-    ...updateProfileMutation,
-    updateProfile,
-    mutate: updateProfileMutation.mutate,
-    mutateAsync: updateProfileMutation.mutateAsync,
-  };
-};
-
-export const useChangePassword = () => {
-  const changePasswordMutation = useChangePasswordQuery();
-
-  const changePassword = (
-    newPassword: string,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    changePasswordMutation.mutate(newPassword, {
-      onSuccess: () => {
-        toast.success("Password Changed", {
-          description: "Your password has been changed successfully.",
-        });
-        options?.onSuccess?.();
-      },
-      onError: (error: Error) => {
-        toast.error("Password Change Failed", {
-          description:
-            error.message || "Unable to change password. Please try again.",
-        });
-        options?.onError?.(error);
-      },
-    });
-  };
-
-  return {
-    ...changePasswordMutation,
-    changePassword,
-    mutate: changePasswordMutation.mutate,
-    mutateAsync: changePasswordMutation.mutateAsync,
-  };
-};
-
-export const useResetPassword = () => {
-  const resetPasswordMutation = useResetPasswordQuery();
-
-  const resetPassword = (
-    email: string,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    resetPasswordMutation.mutate(email, {
-      onSuccess: () => {
-        toast.success("Reset Email Sent", {
-          description: "Check your email for password reset instructions.",
-        });
-        options?.onSuccess?.();
-      },
-      onError: (error: Error) => {
-        toast.error("Reset Failed", {
-          description:
-            error.message || "Unable to send reset email. Please try again.",
-        });
-        options?.onError?.(error);
-      },
-    });
-  };
-
-  return {
-    ...resetPasswordMutation,
-    resetPassword,
-    mutate: resetPasswordMutation.mutate,
-    mutateAsync: resetPasswordMutation.mutateAsync,
   };
 };

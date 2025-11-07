@@ -33,7 +33,7 @@ export const useAllBusinesses = () => {
   return useQuery<Business[]>({
     queryKey: ["businesses"],
     queryFn: async () => {
-      const [businessesResult, parkingLotsResult] = await Promise.all([
+      const [businessesResult, parkingSpotsResult] = await Promise.all([
         supabase
           .from("businesses")
           .select(
@@ -41,7 +41,7 @@ export const useAllBusinesses = () => {
           )
           .order("name"),
         supabase
-          .from("parking_lots")
+          .from("parking_spots")
           .select("id, business_id")
           .not("business_id", "is", null),
       ]);
@@ -57,14 +57,14 @@ export const useAllBusinesses = () => {
       }
 
       const spotsCountMap = new Map<string, number>();
-      if (!parkingLotsResult.error && parkingLotsResult.data) {
+      if (!parkingSpotsResult.error && parkingSpotsResult.data) {
         (
-          parkingLotsResult.data as unknown as Array<{ business_id: string }>
-        ).forEach((lot) => {
-          if (lot?.business_id) {
+          parkingSpotsResult.data as unknown as Array<{ business_id: string }>
+        ).forEach((spot) => {
+          if (spot?.business_id) {
             spotsCountMap.set(
-              lot.business_id,
-              (spotsCountMap.get(lot.business_id) || 0) + 1
+              spot.business_id,
+              (spotsCountMap.get(spot.business_id) || 0) + 1
             );
           }
         });
@@ -105,7 +105,7 @@ export const useBusiness = (businessId: string) => {
       }
 
       const { count: spotsCount } = await supabase
-        .from("parking_lots")
+        .from("parking_spots")
         .select("*", { count: "exact", head: true })
         .eq("business_id", businessId);
 

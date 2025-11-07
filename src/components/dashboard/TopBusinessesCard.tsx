@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, CheckCircle2 } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBusinessManagement } from "@/hooks/useBusinessManagement";
 
 export const TopBusinessesCard = () => {
-  const { displayedBusinesses } = useBusinessManagement();
+  const { TopBusinessCardItems } = useBusinessManagement();
   const navigate = useNavigate();
 
   return (
@@ -27,7 +27,7 @@ export const TopBusinessesCard = () => {
       </CardHeader>
       <CardContent className="p-0">
         <div className="divide-y">
-          {displayedBusinesses?.map((business, idx) => (
+          {TopBusinessCardItems?.map((business) => (
             <div
               key={business.id}
               className="p-4 hover:bg-muted/50 transition-colors cursor-pointer group"
@@ -36,15 +36,15 @@ export const TopBusinessesCard = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                    <span className="font-bold text-lg text-purple-600">
-                      {idx + 1}
-                    </span>
+                    <Building2 className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
                     <p className="font-semibold group-hover:text-primary transition-colors">
                       {business.name}
                     </p>
-                    <p className="text-sm text-muted-foreground">-- spots</p>
+                    <p className="text-sm text-muted-foreground">
+                      {business.spots_count || 0} spots
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

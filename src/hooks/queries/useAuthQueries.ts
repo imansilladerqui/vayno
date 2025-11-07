@@ -1,7 +1,6 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { USER_ROLES } from "@/lib/utils";
-import type { UserRole } from "@/types";
 
 export const useSignUp = () => {
   return useMutation({
@@ -30,18 +29,6 @@ export const useSignUp = () => {
       });
 
       if (authError) throw authError;
-
-      if (authData.user) {
-        const { error: profileError } = await supabase.from("profiles").insert({
-          id: authData.user.id,
-          email: email,
-          full_name: fullName,
-          role: userRole,
-        });
-
-        if (profileError) throw profileError;
-      }
-
       return {
         user: authData.user,
         session: authData.session,
@@ -127,73 +114,5 @@ export const useResetPassword = () => {
 
       if (error) throw error;
     },
-  });
-};
-
-export const getCurrentUser = async () => {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error) throw error;
-  return user;
-};
-
-export const getUserProfile = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select(
-      `
-          *,
-          businesses:business_id (
-            id,
-            name,
-            address
-          )
-        `
-    )
-    .eq("id", userId)
-    .single();
-
-  if (error) throw error;
-  return data;
-};
-
-export const getUserRole = async (userId: string): Promise<UserRole | null> => {
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .single();
-
-    if (error) return null;
-    return (data?.role as UserRole) || null;
-  } catch {
-    return null;
-  }
-};
-
-// React Query hooks that use the exported functions
-export const useCurrentUser = () => {
-  return useQuery({
-    queryKey: ["current-user"],
-    queryFn: getCurrentUser,
-  });
-};
-
-export const useUserProfile = (userId: string) => {
-  return useQuery({
-    queryKey: ["user-profile", userId],
-    queryFn: () => getUserProfile(userId),
-    enabled: !!userId,
-  });
-};
-
-export const useUserRole = (userId: string) => {
-  return useQuery({
-    queryKey: ["user-role", userId],
-    queryFn: () => getUserRole(userId),
-    enabled: !!userId,
   });
 };
